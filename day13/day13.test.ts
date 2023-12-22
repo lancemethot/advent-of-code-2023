@@ -5,12 +5,14 @@ enum Terrain {
   ROCK = "#",
 }
 
+type LineOfReflection = {
+  row?: number;
+  column?: number;
+};
+
 type Pattern = {
   terrain: Terrain[][];
-  lineOfReflection: {
-    row: number;
-    column: number;
-  };
+  lineOfReflection: LineOfReflection;
 };
 
 function newPattern(): Pattern {
@@ -44,17 +46,24 @@ function parseInput(lines: string[]): Pattern[] {
  * Reverse the 'before' characters
  * Compare the two for any inequality
  */
+const cache: Map<string, boolean> = new Map();
 function isReflective(terrain: Terrain[], index: number): boolean {
+  const key = `${terrain.join("")}-${index}`;
+  if (cache.has(key)) {
+    return cache.get(key) as boolean;
+  }
+  let reflective = false;
   const before = terrain.slice(0, index).reverse();
   const after = terrain.slice(index);
   let stop = Math.min(before.length, after.length);
-  if (stop === 0) return false;
   for (let i = 0; i < stop; i++) {
-    if (before[i] !== after[i]) {
-      return false;
+    reflective = before[i] === after[i];
+    if (!reflective) {
+      break;
     }
   }
-  return true;
+  cache.set(key, reflective);
+  return reflective;
 }
 
 function findReflection(pattern: Pattern): Pattern {
@@ -81,8 +90,26 @@ function findReflection(pattern: Pattern): Pattern {
       }
     }
   }
-  pattern.lineOfReflection.column = possibleColumns[0] || 0;
-  pattern.lineOfReflection.row = possibleRows[0] || 0;
+  pattern.lineOfReflection.column = possibleColumns[0];
+  pattern.lineOfReflection.row = possibleRows[0];
+  return pattern;
+}
+
+function flipTerrain(terrain: Terrain[][], x: number, y: number): Terrain[][] {
+  return terrain.map((row, a) => {
+    return row.map((cell, b) => {
+      if (a === x && b === y) {
+        return cell === Terrain.ASH ? Terrain.ROCK : Terrain.ASH;
+      } else {
+        return cell;
+      }
+    });
+  });
+}
+
+function fixSmudge(pattern: Pattern): Pattern {
+  // scan each cell
+  // change symbol and check if reflective
   return pattern;
 }
 
@@ -91,7 +118,19 @@ function partOne(lines: string[]) {
     .map((pattern) => findReflection(pattern))
     .reduce((acc, pattern) => {
       return (acc +=
-        pattern.lineOfReflection.column + pattern.lineOfReflection.row * 100);
+        (pattern.lineOfReflection.column || 0) +
+        (pattern.lineOfReflection.row || 0) * 100);
+    }, 0);
+}
+
+function partTwo(lines: string[]) {
+  return parseInput(lines)
+    .map((pattern) => fixSmudge(pattern))
+    .map((pattern) => findReflection(pattern))
+    .reduce((acc, pattern) => {
+      return (acc +=
+        (pattern.lineOfReflection.column || 0) +
+        (pattern.lineOfReflection.row || 0) * 100);
     }, 0);
 }
 
@@ -99,4 +138,6 @@ const day = "day13";
 test(day, () => {
   expect(partOne(getSmallInput(day))).toBe(405);
   expect(partOne(getFullInput(day))).toBe(37975);
+
+//  expect(partTwo(getSmallInput(day))).toBe(400);
 });
