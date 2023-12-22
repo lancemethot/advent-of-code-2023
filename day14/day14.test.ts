@@ -6,13 +6,6 @@ enum TileType {
   EMPTY = ".",
 }
 
-enum TiltDirection {
-  NORTH = "N",
-  SOUTH = "S",
-  EAST = "E",
-  WEST = "W",
-}
-
 type Platform = {
   tiles: TileType[][];
 };
@@ -23,47 +16,86 @@ function parseInput(lines: string[]): Platform {
   };
 }
 
-function tilt(platform: Platform): Platform {
-  const tilted = platform.tiles.map((row) => row.map((tile) => tile));
-  // if direction is north
-  // - for each column
-  // - start with lowest = 0
-  // - look at each row for the next # or O
-  // - if # then set lowest to row #
-  // - if O then swap O and . set lowest to row #
-  for (let y = 0; y < tilted[0].length; y++) {
-    let lowest = 0;
-    for (let x = 0; x < tilted.length; x++) {
-      if (tilted[x][y] === TileType.CUBE) {
-        lowest = x + 1;
-      } else if (tilted[x][y] === TileType.EMPTY) {
-        lowest = Math.min(x, lowest); // Handle series of empty
-      } else if (tilted[x][y] === TileType.ROUND) {
-        if (tilted[lowest][y] === TileType.EMPTY) {
-          tilted[x][y] = TileType.EMPTY;
-          tilted[lowest][y] = TileType.ROUND;
-          lowest = lowest + 1;
+const cache: Map<string, string> = new Map();
+function tiltLine(line: TileType[]): TileType[] {
+  const key = line.join("");
+  if (!cache.has(key)) {
+    const tilted = line
+      .join("")
+      .split(/(#)/g)
+      .map((group) => {
+        if (group === TileType.CUBE) {
+          return TileType.CUBE;
         } else {
-          lowest = x + 1;
+          return group
+            .split("")
+            .sort((a, b) => {
+              return a === TileType.ROUND ? (b === TileType.EMPTY ? -1 : 1) : 0;
+            })
+            .join("");
         }
-      }
-    }
+      })
+      .join("");
+    cache.set(key, tilted);
+  }
+  return cache
+    .get(key)
+    ?.split("")
+    .map((tile) => tile as TileType) as TileType[];
+}
+
+function tilt(tiles: TileType[][]): TileType[][] {
+  return tiles.map((line) => tiltLine(line));
+}
+
+function turn(tiles: TileType[][], times: number = 1): TileType[][] {
+  let rotatedTiles = tiles.map((row) => row.map((tile) => tile));
+  for (let i = 0; i < times; i++) {
+    // Transpose the grid (rotate 90 degrees clockwise)
+    rotatedTiles = rotatedTiles[0]
+      .map((_, i) => rotatedTiles.map((row) => row[i]))
+      .map((row) => row.reverse());
+  }
+  return rotatedTiles;
+}
+
+function spin(platform: Platform, cycles: number): Platform {
+  let tiles = turn(platform.tiles, 3); // move so that north can be tilted
+  for (let i = 0; i < cycles; i++) {
+    // Tilt N -> W -> S -> E
+    tiles = turn(tilt(turn(tilt(turn(tilt(turn(tilt(tiles))))))));
   }
   return {
-    tiles: tilted,
+    tiles: turn(tiles, 2), // move back to original orientation
   };
 }
 
 function partOne(lines: string[]): number {
-  return tilt(parseInput(lines)).tiles.reduce((acc, row, index, tiles) => {
-    return (acc += row.reduce((acc, tile) => {
-      return (acc += tile === TileType.ROUND ? tiles.length - index : 0);
-    }, 0));
-  }, 0);
+  return turn(tilt(turn(parseInput(lines).tiles, 3))).reduce(
+    (acc, row, index, tiles) => {
+      return (acc += row.reduce((acc, tile) => {
+        return (acc += tile === TileType.ROUND ? tiles.length - index : 0);
+      }, 0));
+    },
+    0
+  );
+}
+
+function partTwo(lines: string[]): number {
+  return spin(parseInput(lines), 3).tiles.reduce(
+    (acc, row, index, tiles) => {
+      return (acc += row.reduce((acc, tile) => {
+        return (acc += tile === TileType.ROUND ? tiles.length - index : 0);
+      }, 0));
+    },
+    0
+  );
 }
 
 const day = "day14";
 test(day, () => {
   expect(partOne(getSmallInput(day))).toBe(136);
   expect(partOne(getFullInput(day))).toBe(112048);
+
+//  expect(partTwo(getSmallInput(day))).toBe(64);
 });
