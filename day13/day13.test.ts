@@ -1,3 +1,4 @@
+import { isEmpty, isNil } from "lodash";
 import { getFullInput, getSmallInput } from "../utils";
 
 enum Terrain {
@@ -18,10 +19,7 @@ type Pattern = {
 function newPattern(): Pattern {
   return {
     terrain: [],
-    lineOfReflection: {
-      row: 0,
-      column: 0,
-    },
+    lineOfReflection: {},
   };
 }
 
@@ -90,8 +88,13 @@ function findReflection(pattern: Pattern): Pattern {
       }
     }
   }
-  pattern.lineOfReflection.column = possibleColumns[0];
-  pattern.lineOfReflection.row = possibleRows[0];
+  // Remove existing reflective cols/rows from candidate list (part 2)
+  pattern.lineOfReflection.column = possibleColumns.filter(
+    (column) => column !== pattern.lineOfReflection.column
+  )[0];
+  pattern.lineOfReflection.row = possibleRows.filter(
+    (row) => row !== pattern.lineOfReflection.row
+  )[0];
   return pattern;
 }
 
@@ -108,8 +111,20 @@ function flipTerrain(terrain: Terrain[][], x: number, y: number): Terrain[][] {
 }
 
 function fixSmudge(pattern: Pattern): Pattern {
-  // scan each cell
-  // change symbol and check if reflective
+  for (let x = 0; x < pattern.terrain.length; x++) {
+    for (let y = 0; y < pattern.terrain[x].length; y++) {
+      const reflection = findReflection({
+        terrain: flipTerrain(pattern.terrain, x, y),
+        lineOfReflection: {
+          column: pattern.lineOfReflection.column,
+          row: pattern.lineOfReflection.row
+        }
+      });
+      if (!isNil(reflection.lineOfReflection.column) || !isNil(reflection.lineOfReflection.row)) {
+        return reflection;
+      }
+    }
+  }
   return pattern;
 }
 
@@ -125,8 +140,8 @@ function partOne(lines: string[]) {
 
 function partTwo(lines: string[]) {
   return parseInput(lines)
-    .map((pattern) => fixSmudge(pattern))
     .map((pattern) => findReflection(pattern))
+    .map((pattern) => fixSmudge(pattern))
     .reduce((acc, pattern) => {
       return (acc +=
         (pattern.lineOfReflection.column || 0) +
@@ -139,5 +154,6 @@ test(day, () => {
   expect(partOne(getSmallInput(day))).toBe(405);
   expect(partOne(getFullInput(day))).toBe(37975);
 
-//  expect(partTwo(getSmallInput(day))).toBe(400);
+  expect(partTwo(getSmallInput(day))).toBe(400);
+  expect(partTwo(getFullInput(day))).toBe(32497);
 });
