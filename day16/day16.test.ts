@@ -150,6 +150,29 @@ function energize(tiles: Tile[][], beam: Beam): Tile[][] {
   return energized;
 }
 
+function beams(tiles: Tile[][]): Beam[] {
+  return tiles
+    .map((line, x) =>
+      line
+        .map((tile, y) => {
+          const items: Beam[] = [];
+          if (x === 0) {
+            items.push({ x, y, direction: Direction.DOWN });
+          } else if (x === tiles.length - 1) {
+            items.push({ x, y, direction: Direction.UP });
+          }
+          if (y === 0) {
+            items.push({ x, y, direction: Direction.RIGHT });
+          } else if (y === tiles[x].length - 1) {
+            items.push({ x, y, direction: Direction.LEFT });
+          }
+          return items as Beam[];
+        })
+        .flat()
+    )
+    .flat();
+}
+
 function partOne(lines: string[]): number {
   return energize(parseInput(lines), {
     x: 0,
@@ -162,8 +185,25 @@ function partOne(lines: string[]): number {
   }, 0);
 }
 
+function partTwo(lines: string[]): number {
+  const tiles = parseInput(lines);
+  return beams(tiles).reduce((acc, beam) => {
+    return Math.max(
+      acc,
+      energize(tiles, beam).reduce((acc, line) => {
+        return (acc += line.reduce((acc, tile) => {
+          return (acc += tile.energized.length > 0 ? 1 : 0);
+        }, 0));
+      }, 0)
+    );
+  }, 0);
+}
+
 const day = "day16";
 test(day, () => {
   expect(partOne(getSmallInput(day))).toBe(46);
   expect(partOne(getFullInput(day))).toBe(7870);
+
+  expect(partTwo(getSmallInput(day))).toBe(51);
+  expect(partTwo(getFullInput(day))).toBe(8143);
 });
