@@ -59,14 +59,24 @@ function turn(tiles: TileType[][], times: number = 1): TileType[][] {
   return rotatedTiles;
 }
 
+const detector: Map<string, number> = new Map();
 function spin(platform: Platform, cycles: number): Platform {
   let tiles = turn(platform.tiles, 3); // move so that north can be tilted
   for (let i = 0; i < cycles; i++) {
-    // Tilt N -> W -> S -> E
     tiles = turn(tilt(turn(tilt(turn(tilt(turn(tilt(tiles))))))));
+    const key = tiles.map((row) => row.join("")).join("");
+    if (detector.has(key)) {
+      const length = i - detector.get(key)!;
+      if(i + length < cycles) {
+        // skip ahead
+        i = cycles - (cycles - i) % length;
+      }
+    } else {
+      detector.set(key, i);
+    }
   }
   return {
-    tiles: turn(tiles, 2), // move back to original orientation
+    tiles: turn(tiles), // move back to original orientation
   };
 }
 
@@ -82,7 +92,7 @@ function partOne(lines: string[]): number {
 }
 
 function partTwo(lines: string[]): number {
-  return spin(parseInput(lines), 3).tiles.reduce(
+  return spin(parseInput(lines), 1000000000).tiles.reduce(
     (acc, row, index, tiles) => {
       return (acc += row.reduce((acc, tile) => {
         return (acc += tile === TileType.ROUND ? tiles.length - index : 0);
@@ -97,5 +107,6 @@ test(day, () => {
   expect(partOne(getSmallInput(day))).toBe(136);
   expect(partOne(getFullInput(day))).toBe(112048);
 
-//  expect(partTwo(getSmallInput(day))).toBe(64);
+  expect(partTwo(getSmallInput(day))).toBe(64);
+  expect(partTwo(getFullInput(day))).toBe(105606);
 });
