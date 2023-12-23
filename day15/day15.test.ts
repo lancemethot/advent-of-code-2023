@@ -19,7 +19,6 @@ function hash(text: string): number {
 
 function fillBoxes(steps: string[]): string[][] {
   const boxes = Array.from(new Array(256), () => [] as string[]);
-  const labelMap: { [key: string]: number } = {};
   for (let i = 0; i < steps.length; i++) {
     const match = steps[i].split(
       /([^=-]+)([=-])([0-9]*)/gi
