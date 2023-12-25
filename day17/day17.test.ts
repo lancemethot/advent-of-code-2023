@@ -59,6 +59,10 @@ function getNextTiles(
   }
 }
 
+function cacheKey(path: Path): string {
+  return `${path.x},${path.y},${path.direction},${path.length}`;
+}
+
 function findPaths(map: Tile[][]): Path[] {
   const cache: { [key: string]: number } = {};
   const paths: Path[] = [];
@@ -68,8 +72,6 @@ function findPaths(map: Tile[][]): Path[] {
     Direction.UP,
     Direction.DOWN,
   ];
-  const distances = map.map((row) => row.map(() => Number.MAX_VALUE));
-  distances[0][0] = 0;
 
   paths.push(
     {
@@ -90,40 +92,56 @@ function findPaths(map: Tile[][]): Path[] {
 
   for (let i = 0; i < paths.length; i++) {
     const path = paths[i];
-    const key = `${path.x},${path.y},${path.direction},${path.length}`;
-    if (cache[key] && cache[key] <= path.cost) {
+    const key = cacheKey(path);
+    if (cache[key]) {
       continue;
     }
-    let tile: Tile | undefined = map[path.x][path.y];
-    getNextTiles(map, tile, path.direction)
-      .forEach((next, index) => {
+    if(path.x === map.length && path.y === map[0].length) {
+      break;
+    }
+    getNextTiles(map, map[path.x][path.y], path.direction)
+      .map((next, index) => {
         if (!isNil(next)) {
           if (path.direction !== directions[index]) {
             // change direction
-            distances[next.x][next.y] = path.cost + next.heatloss;
-            paths.push({
+            return {
               x: next.x,
               y: next.y,
               length: 1,
               direction: directions[index],
               cost: path.cost + next.heatloss,
-            });
+            };
           } else if (path.length < 3) {
             // same direction
-            distances[next.x][next.y] = path.cost + next.heatloss;
-            paths.push({
+            return {
               x: next.x,
               y: next.y,
               length: path.length + 1,
               direction: path.direction,
               cost: path.cost + next.heatloss,
-            });
+            };
           }
         }
+        return undefined;
+      })
+      .filter((newPath) => !isNil(newPath)) // there is a path
+      .filter((newPath) => !cache[cacheKey(newPath!)]) // it has not been visited
+      .forEach((newPath) => {
+        // find insert position
+        const insert = paths.findIndex((path) => {
+          return path.cost > newPath!.cost;
+        });
+        // insert in order of cost
+        paths.splice(insert >= 0 ? insert : paths.length, 0, newPath as Path);
       });
     cache[key] = path.cost;
   }
 
+  console.log(
+    paths.filter(
+      (path) => path.x === map.length - 1 && path.y === map[0].length - 1
+    )
+  );
   return paths.filter(
     (path) => path.x === map.length - 1 && path.y === map[0].length - 1
   );
@@ -138,5 +156,5 @@ function partOne(lines: string[]): number {
 const day = "day17";
 test(day, () => {
   expect(partOne(getSmallInput(day))).toBe(102);
-  //expect(partOne(getFullInput(day))).toBe(0);
+  expect(partOne(getFullInput(day))).toBe(1020);
 });
