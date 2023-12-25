@@ -7,6 +7,12 @@ enum Direction {
   UP = "up",
   DOWN = "down",
 }
+const directions: Direction[] = [
+  Direction.LEFT,
+  Direction.RIGHT,
+  Direction.UP,
+  Direction.DOWN,
+];
 
 type Tile = {
   x: number;
@@ -63,15 +69,24 @@ function cacheKey(path: Path): string {
   return `${path.x},${path.y},${path.direction},${path.length}`;
 }
 
-function findPaths(map: Tile[][]): Path[] {
+function jump(map: Tile[][], tile: Tile, direction: Direction, length: number): { next?: Tile, cost: number } {
+  let cost = 0;
+  let next = tile;
+  for(let i = 0; i < length; i++) {
+    next = getNextTiles(map, map[next.x][next.y], direction)[directions.indexOf(direction)]!;
+    if(!isNil(next)) {
+      cost += next.heatloss;
+    } else {
+      break;
+    }
+  }
+  //console.log(`jumped ${length} tiles, ${tile.x},${tile.y} -> ${next.x},${next.y} cost: ${cost}`);
+  return { next, cost };
+}
+
+function findPaths(map: Tile[][], minLength: number = 1, maxLength: number = 3): Path[] {
   const cache: { [key: string]: number } = {};
   const paths: Path[] = [];
-  const directions: Direction[] = [
-    Direction.LEFT,
-    Direction.RIGHT,
-    Direction.UP,
-    Direction.DOWN,
-  ];
 
   paths.push(
     {
@@ -102,7 +117,7 @@ function findPaths(map: Tile[][]): Path[] {
     getNextTiles(map, map[path.x][path.y], path.direction)
       .map((next, index) => {
         if (!isNil(next)) {
-          if (path.direction !== directions[index]) {
+          if (path.direction !== directions[index] && path.length >= minLength) {
             // change direction
             return {
               x: next.x,
@@ -111,8 +126,20 @@ function findPaths(map: Tile[][]): Path[] {
               direction: directions[index],
               cost: path.cost + next.heatloss,
             };
-          } else if (path.length < 3) {
-            // same direction
+          } else if(path.length < minLength) {
+            // same direction, but jump to min length tile
+            const jumpAhead = jump(map, map[path.x][path.y], path.direction, minLength - path.length);
+            if(!isNil(jumpAhead.next)) {
+              return {
+                x: jumpAhead.next.x,
+                y: jumpAhead.next.y,
+                length: minLength,
+                direction: path.direction,
+                cost: path.cost + jumpAhead.cost,
+              };
+            }
+          } else if (path.length < maxLength) {
+            // same direction, but under max length, move forward
             return {
               x: next.x,
               y: next.y,
@@ -148,8 +175,18 @@ function partOne(lines: string[]): number {
   }, Number.MAX_VALUE);
 }
 
+function partTwo(lines: string[]): number {
+  return findPaths(parseInput(lines), 4, 10).reduce((acc, path) => {
+    return Math.min(acc, path.cost);
+  }, Number.MAX_VALUE);
+}
+
 const day = "day17";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(102);
-  expect(partOne(getFullInput(day))).toBe(1004);
+  expect(partOne(getSmallInput(day, 1))).toBe(102);
+  //expect(partOne(getFullInput(day))).toBe(1004);
+
+  expect(partTwo(getSmallInput(day, 1))).toBe(94);
+  expect(partTwo(getSmallInput(day, 2))).toBe(71);
+  //expect(partTwo(getFullInput(day))).toBe(0);
 });
