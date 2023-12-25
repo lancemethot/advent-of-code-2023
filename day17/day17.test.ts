@@ -137,11 +137,6 @@ function findPaths(map: Tile[][]): Path[] {
     cache[key] = path.cost;
   }
 
-  console.log(
-    paths.filter(
-      (path) => path.x === map.length - 1 && path.y === map[0].length - 1
-    )
-  );
   return paths.filter(
     (path) => path.x === map.length - 1 && path.y === map[0].length - 1
   );
@@ -156,5 +151,5 @@ function partOne(lines: string[]): number {
 const day = "day17";
 test(day, () => {
   expect(partOne(getSmallInput(day))).toBe(102);
-  expect(partOne(getFullInput(day))).toBe(1020);
+  expect(partOne(getFullInput(day))).toBe(1004);
 });
