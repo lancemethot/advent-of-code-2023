@@ -93,38 +93,63 @@ function jump(
   return { next, cost };
 }
 
+/** debugger */
 function spotlightPath(map: Tile[][], path: Path, queue: Path[]): Path[] {
   const currentPath: Path[] = [];
   const spotlightSize = 2;
-  const inSpotlight = (t: Tile | Path) => { return t.x >= path.x - spotlightSize && t.x <= path.x + spotlightSize && t.y >= path.y - spotlightSize && t.y <= path.y + spotlightSize; };
-  const visual = map.map((row, x) => row.map((tile, y) => inSpotlight(tile) ? "..." : '' as string));
-  const isEmpty = (t: Tile | Path) => { return visual[t.x][t.y] === '...'; };
-  const isNeighbor = (t: Tile | Path) => { return Math.abs(t.x - path.x) <= 1 && Math.abs(t.y - path.y) <= 1; };
+  const inSpotlight = (t: Tile | Path) => {
+    return (
+      t.x >= path.x - spotlightSize &&
+      t.x <= path.x + spotlightSize &&
+      t.y >= path.y - spotlightSize &&
+      t.y <= path.y + spotlightSize
+    );
+  };
+  const visual = map.map((row, x) =>
+    row.map((tile, y) => (inSpotlight(tile) ? "..." : ("" as string)))
+  );
+  const isEmpty = (t: Tile | Path) => {
+    return visual[t.x][t.y] === "...";
+  };
+  const isNeighbor = (t: Tile | Path) => {
+    return Math.abs(t.x - path.x) <= 1 && Math.abs(t.y - path.y) <= 1;
+  };
 
   visual[path.x][path.y] = path.direction.repeat(3);
 
   let next = path;
   currentPath.push(next);
-  while(!isNil(next.parent)) {
+  while (!isNil(next.parent)) {
     currentPath.push(next.parent);
     next = next.parent;
   }
 
-  currentPath.filter(inSpotlight).filter(isEmpty).forEach((p) => {
-    visual[p.x][p.y] = p.direction.repeat(3);
-  });
-  queue.filter(inSpotlight).filter(isEmpty).filter(isNeighbor).forEach((q) => {
-    visual[q.x][q.y] = 'q' + (q.cost + q.distance);
-  });
+  currentPath
+    .filter(inSpotlight)
+    .filter(isEmpty)
+    .forEach((p) => {
+      visual[p.x][p.y] = p.direction.repeat(3);
+    });
+  queue
+    .filter(inSpotlight)
+    .filter(isEmpty)
+    .filter(isNeighbor)
+    .forEach((q) => {
+      visual[q.x][q.y] = "q" + (q.cost + q.distance);
+    });
   getNextTiles(map, map[path.x][path.y], path.direction).forEach((t, index) => {
-    if(!isNil(t) && inSpotlight(t) && isEmpty(t)) {
-      visual[t.x][t.y] = 'c' + (path.cost + t.heatloss + distance([t.x, t.y], [map.length - 1, map[0].length - 1]));
+    if (!isNil(t) && inSpotlight(t) && isEmpty(t)) {
+      visual[t.x][t.y] =
+        "c" +
+        (path.cost +
+          t.heatloss +
+          distance([t.x, t.y], [map.length - 1, map[0].length - 1]));
     }
   });
-  console.log(`Path: ${path.x},${path.y} ${path.direction.repeat(3)} Steps: ${currentPath.length}\n` +
-              `Cost: ${path.cost} Distance from Target: ${path.distance}\n` +
-              `Queue: ${queue.length}`);
-  console.log(visual.map((row, x) => row.map((col, y) => inSpotlight({ x, y } as Tile) ? visual[x][y] : '').join(' ')).join("\n"));
+  console.log( `Path: ${path.x},${path.y} ${path.direction.repeat(3)} Steps: ${currentPath.length }\n` +
+               `Cost: ${path.cost} Distance from Target: ${path.distance}\n` +
+               `Queue: ${queue.length}`);
+  console.log(visual.map((row, x) => row.map((col, y) => (inSpotlight({ x, y } as Tile) ? visual[x][y] : "")).join(" ")).join("\n"));
   return currentPath.reverse();
 }
 
@@ -132,7 +157,7 @@ function tracePath(map: Tile[][], path: Path): Path[] {
   const shortestPath: Path[] = [];
   let next = path;
   shortestPath.push(next);
-  while(!isNil(next.parent)) {
+  while (!isNil(next.parent)) {
     shortestPath.push(next.parent);
     next = next.parent;
   }
@@ -176,11 +201,14 @@ function findShortestPath(
   );
 
   let generation = 0;
-  while(paths.length > 0) {
+  while (paths.length > 0) {
     generation++;
     let lowestIndex = 0;
-    for(let i = 0; i < paths.length; i++) {
-      if(paths[i].cost + paths[i].distance < paths[lowestIndex].cost + paths[lowestIndex].distance) {
+    for (let i = 0; i < paths.length; i++) {
+      if (
+        paths[i].cost + paths[i].distance <
+        paths[lowestIndex].cost + paths[lowestIndex].distance
+      ) {
         lowestIndex = i;
       }
     }
@@ -191,15 +219,12 @@ function findShortestPath(
       continue;
     }
 
-    //if((path.x === 1 && path.y === 8) || (path.x === 1 && path.y === 9) || (path.x === 2 && path.y === 8)) {
-    //  spotlightPath(map, path, paths);
-    //}
-
     if (distance([path.x, path.y], end) === 0) {
       return tracePath(map, path);
     }
 
     paths.splice(lowestIndex, 1);
+    cache[key] = path.cost;
 
     getNextTiles(map, map[path.x][path.y], path.direction)
       .map((next, index) => {
@@ -209,17 +234,25 @@ function findShortestPath(
             path.length >= minLength
           ) {
             // change direction
-            return {
-              x: next.x,
-              y: next.y,
-              length: 1,
-              direction: directions[index],
-              cost: path.cost + next.heatloss,
-              distance: distance([next.x, next.y], end),
-              parent: path,
-            };
+            const jumpAhead = jump(
+              map,
+              map[path.x][path.y],
+              directions[index],
+              minLength,
+            );
+            if (!isNil(jumpAhead.next)) {
+              return {
+                x: jumpAhead.next.x,
+                y: jumpAhead.next.y,
+                length: minLength,
+                direction: directions[index],
+                cost: path.cost + jumpAhead.cost,
+                distance: distance([jumpAhead.next.x, jumpAhead.next.y], end),
+                parent: path,
+              };
+            }
           } else if (path.length < minLength) {
-            // same direction, but jump to min length tile
+            // same direction, but jump ahead to min length
             const jumpAhead = jump(
               map,
               map[path.x][path.y],
@@ -263,15 +296,16 @@ function findShortestPath(
             p.direction === newPath!.direction &&
             p.length === newPath!.length
         );
-        if(index < 0) {
+        if (index < 0) {
+          // add to end
           paths.push(newPath!);
         } else {
-          if(newPath!.cost < paths[index].cost) {
+          // replace if its cheaper
+          if (newPath!.cost <= paths[index].cost) {
             paths[index] = newPath!;
           }
         }
       });
-    cache[key] = path.cost;
   }
 
   return paths.filter(
@@ -296,7 +330,7 @@ test(day, () => {
   expect(partOne(getSmallInput(day, 1))).toBe(102);
   expect(partOne(getFullInput(day))).toBe(1004);
 
-  //expect(partTwo(getSmallInput(day, 1))).toBe(94);
-  //expect(partTwo(getSmallInput(day, 2))).toBe(71);
-  //expect(partTwo(getFullInput(day))).toBe(0);
+  expect(partTwo(getSmallInput(day, 1))).toBe(94);
+  expect(partTwo(getSmallInput(day, 2))).toBe(71);
+  expect(partTwo(getFullInput(day))).toBe(1171);
 });
