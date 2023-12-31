@@ -1,4 +1,4 @@
-import { isNil } from "lodash";
+import { isEmpty, isNil } from "lodash";
 import { getFullInput, getSmallInput } from "../utils";
 
 enum Category {
@@ -30,10 +30,143 @@ type Rule = {
   destination: string | Result;
 };
 
-type Range = {
-  min: number;
-  max: number;
-  complements: Range[];
+class Range {
+  public min: number;
+  public max: number;
+  constructor(min: number, max: number) {
+    this.min = min;
+    this.max = max;
+  }
+
+  overlaps(range: Range): boolean {
+    return (this.min <= range.max && this.max >= range.min) ||
+           (range.min <= this.max && range.max >= this.min);
+  }
+
+  union(range: Range): Range[] {
+    if(this.overlaps(range)) {
+      let min = Math.min(this.min, range.min);
+      let max = Math.max(this.max, range.max);
+      return [new Range(min, max)];
+    }
+    return [this, range];
+  }
+
+  intersect(range: Range): Range[] {
+    if(this.overlaps(range)) {
+      let min = Math.max(this.min, range.min);
+      let max = Math.min(this.max, range.max);
+      return [new Range(min, max)];
+    }
+    return [];
+  }
+
+  complement(range: Range): Range[] {
+    if(this.overlaps(range)) {
+      let min = this.min >= range.min ? range.max + 1 : this.min;
+      let max = this.max > range.max ? this.max : range.min - 1;
+      return [new Range(min, max)];
+    }
+    let bounds = [this, range].sort((a, b) => a.min - b.min);
+    return [new Range(bounds[0].max + 1, bounds[1].min - 1)];
+  }
+
+  size(): number {
+    return this.max === 0 ? 0 : (this.max - this.min + 1);
+  }
+
+  toEqual(range: Range): boolean {
+    return this.min === range.min && this.max === range.max;
+  }
+
+  toString(): string {
+    return `${this.min}..${this.max}`;
+  }
+};
+
+class RangeSet {
+  x: Range[];
+  m: Range[];
+  a: Range[];
+  s: Range[];
+
+  constructor(x: Range[], m: Range[], a: Range[], s: Range[]) {
+    this.x = x;
+    this.m = m;
+    this.a = a;
+    this.s = s;
+  }
+
+  get(category: Category) {
+    switch(category) {
+      case Category.X: return this.x;
+      case Category.M: return this.m;
+      case Category.A: return this.a;
+      case Category.S: return this.s;
+    }
+  }
+
+  set(category: Category, ranges: Range[]) {
+    switch(category) {
+      case Category.X: this.x = ranges; break;
+      case Category.M: this.m = ranges; break;
+      case Category.A: this.a = ranges; break;
+      case Category.S: this.s = ranges; break;
+    }
+  }
+
+  add(category: Category, ranges: Range[]) {
+    let items = [...this.get(category), ... ranges].sort((a, b) => a.min - b.min);
+    this.set(category, items.reduce((acc, r) => {
+      acc.push(... r.union(acc[acc.length - 1]));
+      return acc;
+    }, [] as Range[]));
+  }
+
+  subtract(category: Category, ranges: Range[]) {
+    // TODO:
+    // intersection of complements
+  }
+
+  union(rangeSet: RangeSet): RangeSet {
+    // TODO
+    return this;
+  }
+
+  intersect(rangeSet: RangeSet): RangeSet {
+    // TODO
+    return this;
+  }
+
+  complement(rangeSet: RangeSet): RangeSet {
+    // TODO
+    return this;
+  }
+
+  size(): number {
+    const length = (r: Range[]): number => r.reduce((acc, r) => acc + r.size(), 0);
+    return length(this.x) * length(this.m) * length(this.a) * length(this.s);
+  }
+
+  toString(): string {
+    return `[[x: ${this.x.map((r) => r.toString()).join(", ")}],` +
+            `[m: ${this.m.map((r) => r.toString()).join(", ")}],` +
+            `[a: ${this.a.map((r) => r.toString()).join(", ")}]` +
+            `[s: ${this.s.map((r) => r.toString()).join(", ")}]]`;
+  }
+};
+
+const emptySet = (): RangeSet => {
+  return new RangeSet([], [], [], []);
+};
+
+const universalSet = (): RangeSet => {
+  return new RangeSet(
+    [new Range(1, 4000)],
+    [new Range(1, 4000)],
+    [new Range(1, 4000)],
+    [new Range(1, 4000)],
+  );
 };
 
 function toRule(rule: string): Rule {
@@ -115,14 +248,14 @@ function processParts(workflows: Map<string, Rule[]>, parts: Part[]): Part[] {
       const check = checks.shift() as Rule;
 
       // if no conditions and accepted -> add to accepted and break
-      if (check.condition === undefined &&check.destination === Result.ACCEPTED) {
+      if (check.condition === undefined && check.destination === Result.ACCEPTED) {
         part.result = Result.ACCEPTED;
         accepted.push(part);
         break;
       }
 
       // if no conditions and rejected -> break
-      if (check.condition === undefined &&check.destination === Result.REJECTED) {
+      if (check.condition === undefined && check.destination === Result.REJECTED) {
         break;
       }
 
@@ -143,6 +276,9 @@ function processParts(workflows: Map<string, Rule[]>, parts: Part[]): Part[] {
   return accepted;
 }
 
+// Navigate workflow and build a list of rules
+// ex. m>500->x<100->a>1000->A
+//     s<1250->R
 function flattenRules(workflows: Map<string, Rule[]>, rules: Rule[], prefix: string = ''): string[] {
   const flattened: string[] = [];
 
@@ -166,67 +302,66 @@ function flattenRules(workflows: Map<string, Rule[]>, rules: Rule[], prefix: str
   return flattened;
 }
 
-const categories: Category [] = [Category.X, Category.M, Category.A, Category.S];
-function filterRange(population: Range[], condition: string): Range[] {
-  console.log(`from ${population.map((r) => `${r.min}..${r.max}`).join(',')} where ${condition}`);
+function filterRangeSet(inventory: RangeSet, condition: string): RangeSet {
   const parts = condition.split(/([xmas]{1})([><])([0-9]+)/gi) as RegExpMatchArray;
   const category = parts[1] as Category;
   const operator = parts[2] as ">" | "<";
   const value = parseInt(parts[3]);
-  const index = categories.indexOf(category);
-  let min = operator === '>' ? value + 1 > population[index].min ? value + 1 : population[index].min : population[index].min;
-  let max = operator === '<' ? value - 1 < population[index].max ? value - 1 : population[index].max : population[index].max;
-  let complements: Range[] = [];
-  min > 1 ? complements.push({ min: 1, max: min - 1, complements: [] }) : max < 4000 ? complements.push({ min: max + 1, max: 4000, complements: [] }) : null;
-  population[index] = { min, max, complements };
-  console.log(`to ${population.map((r) => `${r.min}..${r.max}`).join(',')}`);
-  console.log(`complements: ${population.map((r) => r.complements ? `${r.complements[0].min}..${r.complements[0].max}` : `${r.min}..${r.max}`).join(',')}`);
-  return population;
+  const ranges = inventory.get(category);
+  if(ranges.length === 0) ranges.push(new Range(1, 4000));
+  let min = operator === '>' ? value + 1 > ranges[0].min ? value + 1 : ranges[0].min : ranges[0].min;
+  let max = operator === '<' ? value - 1 < ranges[0].max ? value - 1 : ranges[0].max : ranges[0].max;
+  inventory.set(category, [max < min ? new Range(0, 0) : new Range(min, max)]);
+  return inventory;
 }
 
-function findRange(rule: string): Range [] {
+function findRange(rule: string): RangeSet {
   const criteria = rule.split("->").filter((r) => r !== "" && r !== Result.ACCEPTED && r !== Result.REJECTED);
-  const inventory = Array(4).fill({ min: 1, max: 4000} as Range);
   return criteria.reduce((acc, c) => {
-    return filterRange(acc, c);
-  }, inventory);
+    return filterRangeSet(acc, c);
+  }, emptySet());
+}
+
+// Has any items in range set
+function hasAny(set: RangeSet): boolean {
+  const hasSome = (r: Range[]): boolean => r.reduce((acc, r) => acc || (r.max - r.min + 1) > 0, false);
+  return hasSome(set.x) || hasSome(set.m) || hasSome(set.a) || hasSome(set.s);
+}
+
+function applyRule(inventory: RangeSet, rule: string): { overlap: RangeSet, remainder: RangeSet } {
+  let range: RangeSet = findRange(rule);
+  let complement: RangeSet = universalSet().complement(range);
+  let overlap: RangeSet = inventory.intersect(range);
+  let remainder: RangeSet = inventory.intersect(complement);
+
+  console.log(`applying ${rule}\n` +
+              `inventory:\t${JSON.stringify(inventory)}\n` +
+              `range:\t${JSON.stringify(range)}\n` +
+              `complement:\t${JSON.stringify(complement)}\n` +
+              `overlap:\t${JSON.stringify(overlap)}\n` +
+              `remainder:\t${JSON.stringify(remainder)}\n`);
+  
+ return { overlap, remainder };
 }
 
 function countCombinations(workflows: Map<string, Rule[]>): number {
-  let combinations = 0;
+  let inventory: RangeSet = universalSet();
+  let accepted: RangeSet = emptySet();
 
-  const flattened = flattenRules(workflows, workflows.get("in") as Rule[]);
-  const accepted = flattened.filter((rule) => rule.endsWith(`->${Result.ACCEPTED}`));
-  const rejected = flattened.filter((rule) => rule.endsWith(`->${Result.REJECTED}`));
+  let flattened = flattenRules(workflows, workflows.get("in") as Rule[]);
+  console.log(flattened.map((r) => `${r}`).join('\n'));
 
-  // debug
-  let totalParts = 4000 * 4000 * 4000 * 4000;
-  console.log(`total parts: ${totalParts}`);
-  console.log(`accepted:\n${accepted.join('\n')}`);
-  console.log(`rejected:\n${rejected.join('\n')}`);
-  // debug
-
-  combinations = accepted.reduce((acc, rule) => {
-    const range: Range[] = findRange(rule);
-    const valid = range.reduce((acc, r) => {
-      return acc && r.min <= r.max;
-    }, true);
-
-    if(valid) {
-      let x = range[0].max - range[0].min + 1;
-      let m = range[1].max - range[1].min + 1;
-      let a = range[2].max - range[2].min + 1;
-      let s = range[3].max - range[3].min + 1;
-      let total = x * m * a * s;
-      console.log(`  valid rule: ${rule} ${range.map((r) => `${r.min}..${r.max}`).join(',')} = ${total} combinations`);
-      return acc + total;
-    } else {
-      console.log(`invalid rule: ${rule} ${range.map((r) => `${r.min}..${r.max}`).join(',')}`);
+  flattened.filter((r) => r.endsWith(Result.ACCEPTED)).forEach((r) => {
+    let { overlap, remainder } = applyRule(inventory, r);
+    if(hasAny(overlap)) {
+      accepted = accepted.union(overlap);
+      console.log(`accepted = ${JSON.stringify(accepted)}`);
+      inventory = remainder;
     }
-    return acc;
-  }, 0);
+  });
 
-  return combinations;
+  console.log(`accepted: ${JSON.stringify(accepted)}`);
+  return accepted.size();
 }
 
 function partOne(lines: string[]): number {
@@ -247,4 +382,23 @@ test(day, () => {
   expect(partOne(getFullInput(day))).toBe(480738);
 
   expect(partTwo(getSmallInput(day))).toBe(167409079868000);
+});
+
+test(`${day} range class`, () => {
+  // overlapping
+  let rangeA: Range = new Range(5, 400);
+  let rangeB: Range = new Range(2, 50);
+  expect(rangeA.size()).toBe(396);
+  expect(rangeB.size()).toBe(49);
+  expect(rangeA.overlaps(rangeB)).toBe(true);
+  expect(rangeA.union(rangeB)).toEqual(expect.arrayContaining([new Range(2, 400)]));
+  expect(rangeA.intersect(rangeB)).toEqual(expect.arrayContaining([new Range(5, 50)]));
+  expect(rangeA.complement(rangeB)).toEqual(expect.arrayContaining([new Range(51, 400)]));
+  // non-overlapping
+  let rangeC: Range = new Range(1, 50);
+  let rangeD: Range = new Range(75, 100);
+  expect(rangeC.overlaps(rangeD)).toBe(false);
+  expect(rangeC.union(rangeD)).toEqual(expect.arrayContaining([new Range(1, 50), new Range(75, 100)]));
+  expect(rangeC.intersect(rangeD)).toEqual([]);
+  expect(rangeC.complement(rangeD)).toEqual(expect.arrayContaining([new Range(51, 74)]));
 });
