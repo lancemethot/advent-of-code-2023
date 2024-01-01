@@ -38,13 +38,15 @@ class Range {
     this.max = max;
   }
 
-  overlaps(range: Range): boolean {
-    return (this.min <= range.max && this.max >= range.min) ||
-           (range.min <= this.max && range.max >= this.min);
+  overlaps(range: Range, inclusive: boolean = false): boolean {
+    if(isNil(range)) return false;
+    return (this.min <= range.max && this.max >= range.min - (inclusive ? 1 : 0)) ||
+           (range.min <= this.max && range.max >= this.min - (inclusive ? 1 : 0));
   }
 
   union(range: Range): Range[] {
-    if(this.overlaps(range)) {
+    if(isNil(range)) return [this];
+    if(this.overlaps(range, true)) {
       let min = Math.min(this.min, range.min);
       let max = Math.max(this.max, range.max);
       return [new Range(min, max)];
@@ -53,6 +55,7 @@ class Range {
   }
 
   intersect(range: Range): Range[] {
+    if(isNil(range)) return [];
     if(this.overlaps(range)) {
       let min = Math.max(this.min, range.min);
       let max = Math.min(this.max, range.max);
@@ -62,13 +65,18 @@ class Range {
   }
 
   complement(range: Range): Range[] {
+    if(isNil(range)) return [this];
+    let min = 0;
+    let max = 0;
     if(this.overlaps(range)) {
-      let min = this.min >= range.min ? range.max + 1 : this.min;
-      let max = this.max > range.max ? this.max : range.min - 1;
-      return [new Range(min, max)];
+      min = this.min >= range.min ? range.max + 1 : this.min;
+      max = this.max > range.max ? this.max : range.min - 1;
+    } else {
+      let bounds = [this, range].sort((a, b) => a.min - b.min);
+      min = bounds[0].max + 1;
+      max = bounds[1].min - 1;
     }
-    let bounds = [this, range].sort((a, b) => a.min - b.min);
-    return [new Range(bounds[0].max + 1, bounds[1].min - 1)];
+    return max <= min ? [] : [new Range(min, max)];
   }
 
   size(): number {
@@ -116,43 +124,93 @@ class RangeSet {
   }
 
   add(category: Category, ranges: Range[]) {
-    let items = [...this.get(category), ... ranges].sort((a, b) => a.min - b.min);
+    let items = [...this.get(category), ...ranges].sort((a, b) => a.min - b.min);
     this.set(category, items.reduce((acc, r) => {
-      acc.push(... r.union(acc[acc.length - 1]));
-      return acc;
+      return r.union(acc[acc.length - 1]);
     }, [] as Range[]));
   }
 
   subtract(category: Category, ranges: Range[]) {
-    // TODO:
-    // intersection of complements
+    let items = this.get(category).sort((a, b) => a.min - b.min);
+    this.set(category, items.reduce((acc, r) => {
+      return ranges.reduce((acc, r2) => {
+        let x = r.intersect(r2);
+        let c = r.complement(x[0]);
+        return [...acc, ...c];
+      }, [] as Range[]);
+    }, [] as Range[]));
+  }
+
+  private unionRanges(a: Range[], b: Range[]): Range[] {
+    if(isEmpty(a)) return b;
+    if(isEmpty(b)) return a;
+    let ranges: Range[] = [... a, ... b].sort((a, b) => a.min - b.min);
+    return ranges.reduce((acc, r) => {
+      return [ ... acc.slice(0, acc.length - 1), ... r.union(acc[acc.length - 1])].sort((a, b) => a.min - b.min);
+    }, [] as Range[]);
   }
 
   union(rangeSet: RangeSet): RangeSet {
-    // TODO
-    return this;
+    let xs = this.unionRanges(this.x, rangeSet.x).sort((a, b) => a.min - b.min);
+    let ms = this.unionRanges(this.m, rangeSet.m).sort((a, b) => a.min - b.min);
+    let as = this.unionRanges(this.a, rangeSet.a).sort((a, b) => a.min - b.min);
+    let ss = this.unionRanges(this.s, rangeSet.s).sort((a, b) => a.min - b.min);
+    return new RangeSet(xs, ms, as, ss);
+  }
+
+  private intersectRanges(a: Range[], b: Range[]): Range[] {
+    if(isEmpty(a) || isEmpty(b)) return [];
+    return a.reduce((acc, r) => {
+      return b.reduce((acc, r2) => {
+        return r.intersect(r2);
+      }, [] as Range[]);
+    }, [] as Range[]);
   }
 
   intersect(rangeSet: RangeSet): RangeSet {
-    // TODO
-    return this;
+    let xs = this.intersectRanges(this.x, rangeSet.x).sort((a, b) => a.min - b.min);
+    let ms = this.intersectRanges(this.m, rangeSet.m).sort((a, b) => a.min - b.min);
+    let as = this.intersectRanges(this.a, rangeSet.a).sort((a, b) => a.min - b.min);
+    let ss = this.intersectRanges(this.s, rangeSet.s).sort((a, b) => a.min - b.min);
+    return new RangeSet(xs, ms, as, ss);
+  }
+
+  private complmentRanges(a: Range[], b: Range[]): Range[] {
+    if(isEmpty(a)) return [];
+    if(isEmpty(b)) return a;
+    return a.reduce((acc, r) => {
+      return b.reduce((acc, r2) => {
+        if(!r.overlaps(r2)) return [r];
+        let x = r.intersect(r2);
+        return x.reduce((acc, r3) => {
+          return r.complement(r3);
+        }, [] as Range[]);
+      }, [] as Range[]);
+    }, [] as Range[]);
   }
 
   complement(rangeSet: RangeSet): RangeSet {
-    // TODO
-    return this;
+    let xs = this.complmentRanges(this.x, rangeSet.x).sort((a, b) => a.min - b.min);
+    let ms = this.complmentRanges(this.m, rangeSet.m).sort((a, b) => a.min - b.min);
+    let as = this.complmentRanges(this.a, rangeSet.a).sort((a, b) => a.min - b.min);
+    let ss = this.complmentRanges(this.s, rangeSet.s).sort((a, b) => a.min - b.min);
+    return new RangeSet(xs, ms, as, ss);
   }
 
   size(): number {
     const length = (r: Range[]): number => r.reduce((acc, r) => acc + r.size(), 0);
-    return length(this.x) * length(this.m) * length(this.a) * length(this.s);
+    if(isEmpty(this.x) && isEmpty(this.m) && isEmpty(this.a) && isEmpty(this.s)) return 0;
+    return (isEmpty(this.x) ? 1 : length(this.x)) *
+           (isEmpty(this.m) ? 1 : length(this.m)) *
+           (isEmpty(this.a) ? 1 : length(this.a)) * 
+           (isEmpty(this.s) ? 1: length(this.s));
   }
 
   toString(): string {
-    return `[[x: ${this.x.map((r) => r.toString()).join(", ")}],` +
-            `[m: ${this.m.map((r) => r.toString()).join(", ")}],` +
-            `[a: ${this.a.map((r) => r.toString()).join(", ")}]` +
-            `[s: ${this.s.map((r) => r.toString()).join(", ")}]]`;
+    return `[[x: ${isEmpty(this.x) ? '-----' : this.x.map((r) => r.toString()).join(",")}]\t` +
+            `[m: ${isEmpty(this.m) ? '-----' : this.m.map((r) => r.toString()).join(",")}]\t` +
+            `[a: ${isEmpty(this.a) ? '-----' : this.a.map((r) => r.toString()).join(",")}]\t` +
+            `[s: ${isEmpty(this.s) ? '-----' : this.s.map((r) => r.toString()).join(",")}]]`;
   }
 };
 
@@ -315,11 +373,11 @@ function filterRangeSet(inventory: RangeSet, condition: string): RangeSet {
   return inventory;
 }
 
-function findRange(rule: string): RangeSet {
+function findRange(inventory: RangeSet, rule: string): RangeSet {
   const criteria = rule.split("->").filter((r) => r !== "" && r !== Result.ACCEPTED && r !== Result.REJECTED);
   return criteria.reduce((acc, c) => {
     return filterRangeSet(acc, c);
-  }, emptySet());
+  }, inventory);
 }
 
 // Has any items in range set
@@ -329,24 +387,51 @@ function hasAny(set: RangeSet): boolean {
 }
 
 function applyRule(inventory: RangeSet, rule: string): { overlap: RangeSet, remainder: RangeSet } {
-  let range: RangeSet = findRange(rule);
-  let complement: RangeSet = universalSet().complement(range);
+  let range: RangeSet = findRange(inventory, rule);
+  let complement: RangeSet = inventory.complement(range);
   let overlap: RangeSet = inventory.intersect(range);
   let remainder: RangeSet = inventory.intersect(complement);
 
   console.log(`applying ${rule}\n` +
-              `inventory:\t${JSON.stringify(inventory)}\n` +
-              `range:\t${JSON.stringify(range)}\n` +
-              `complement:\t${JSON.stringify(complement)}\n` +
-              `overlap:\t${JSON.stringify(overlap)}\n` +
-              `remainder:\t${JSON.stringify(remainder)}\n`);
-  
- return { overlap, remainder };
+//              `inventory:\t${inventory.toString()}\n` +
+              `range:\t${range.toString()}\n` +
+//              `complement:\t${complement.toString()}\n` +
+//              `overlap:\t${overlap.toString()}\n` +
+//              `remainder:\t${remainder.toString()}\n`+
+``);
+  return { overlap: range, remainder: complement}
+ //return { overlap, remainder };
 }
 
 function countCombinations(workflows: Map<string, Rule[]>): number {
   let inventory: RangeSet = universalSet();
-  let accepted: RangeSet = emptySet();
+  let checks: Rule[] = [...(workflows.get("in") as Rule[])];
+  let check: Rule | undefined = undefined;
+  let combinations = 0;
+  let ranges: Range[] = [];
+  let complements: Range[] = [];
+
+  while ((check = checks.shift()) !== undefined) {
+    if(isNil(check.condition)) {
+      if(check.destination === Result.ACCEPTED) {
+        combinations += inventory.size();
+        // add to combinations
+        // set inventory to complement
+        break;
+      } else if(check.destination === Result.REJECTED) {
+        // set inventory to complement
+        break;
+      } else if(workflows.has(check.destination as string)) {
+        // eval next workflow
+        checks.splice(0, 0, ...(workflows.get(check.destination as string) as Rule[]));
+        continue;
+      }
+    } else {
+      inventory = filterRangeSet(inventory, `${check.condition.category}${check.condition.operator}${check.condition.value}`);
+      checks.splice(0, 0, { destination: check.destination } as Rule);
+      continue;
+    }
+  }
 
   let flattened = flattenRules(workflows, workflows.get("in") as Rule[]);
   console.log(flattened.map((r) => `${r}`).join('\n'));
@@ -355,12 +440,12 @@ function countCombinations(workflows: Map<string, Rule[]>): number {
     let { overlap, remainder } = applyRule(inventory, r);
     if(hasAny(overlap)) {
       accepted = accepted.union(overlap);
-      console.log(`accepted = ${JSON.stringify(accepted)}`);
-      inventory = remainder;
+      console.log(`accepted = ${accepted.toString()}`);
+      console.log(`size = ${accepted.size()}`)
+      //inventory = remainder;
     }
   });
-
-  console.log(`accepted: ${JSON.stringify(accepted)}`);
+  console.log(`accepted: ${accepted.toString()}`);
   return accepted.size();
 }
 
@@ -401,4 +486,26 @@ test(`${day} range class`, () => {
   expect(rangeC.union(rangeD)).toEqual(expect.arrayContaining([new Range(1, 50), new Range(75, 100)]));
   expect(rangeC.intersect(rangeD)).toEqual([]);
   expect(rangeC.complement(rangeD)).toEqual(expect.arrayContaining([new Range(51, 74)]));
+});
+
+test(`${day} range set class`, () => {
+  // overlapping
+  let rangeSetA: RangeSet = new RangeSet([new Range(5, 400)], [new Range(2, 50)], [new Range(1, 50)], [new Range(75, 100)]);
+  let rangeSetB: RangeSet = new RangeSet([new Range(1, 50)], [new Range(75, 100)], [new Range(1, 50)], [new Range(75, 100)]);
+  expect(rangeSetA.size()).toBe(396 * 49 * 50 * 26);
+  expect(rangeSetB.size()).toBe(50 * 26 * 50 * 26);
+
+  rangeSetA.add(Category.X, [new Range(1, 4)]);
+  expect(rangeSetA.get(Category.X)).toEqual(expect.arrayContaining([new Range(1, 400)]));
+  expect(rangeSetA.size()).toBe(400 * 49 * 50 * 26);
+  rangeSetA.subtract(Category.X, [new Range(1, 4)]);
+  expect(rangeSetA.size()).toBe(396 * 49 * 50 * 26);
+
+  expect(rangeSetA.union(rangeSetB)).toEqual(new RangeSet([new Range(1, 400)], [new Range(2, 50), new Range(75, 100)], [new Range(1, 50)], [new Range(75, 100)]));
+  expect(rangeSetA.intersect(rangeSetB)).toEqual(new RangeSet([new Range(5, 50)], [], [new Range(1, 50)], [new Range(75, 100)]));
+  expect(rangeSetA.complement(rangeSetB)).toEqual(new RangeSet([new Range(51, 400)], [new Range(2, 50)], [], []));
+
+  let rangeSetC: RangeSet = new RangeSet([new Range(1, 1415), new Range(2663, 4000)], [new Range(2091, 4000)], [new Range(1, 2005)], [new Range(1, 1350), new Range(3449, 4000)]);
+  let rangeSetD: RangeSet = new RangeSet([], [new Range(1459, 4000)], [], [new Range(2771, 4000)]);
+  expect(rangeSetC.union(rangeSetD)).toEqual(new RangeSet([new Range(1, 1415), new Range(2663, 4000)], [new Range(1459, 4000)], [new Range(1, 2005)], [new Range(1, 1350), new Range(2771, 4000)]));
 });
