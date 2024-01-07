@@ -35,44 +35,54 @@ function parseInput(lines: string[]): Brick[] {
     });
 }
 
-function overlaps(a: Brick, b: Brick): boolean {
-    /*
-    console.log(`checking ${a.label} ${a.x},${a.y},${a.z} ${a.length}x${a.width}x${a.height} against ${b.label} ${b.x},${b.y},${b.z} ${b.length}x${b.width}x${b.height}` +
-       `check x: ${a.x + a.length - 1} >= ${b.x} && ${a.x} < ${b.x + b.length}` + 
-       `check y: ${a.y + a.width - 1} >= ${b.y} && ${a.y} < ${b.y + b.width}` + 
-       `check z: ${a.z + a.height - 1} >= ${b.z} && ${a.z} < ${b.z + b.height}`);
-    */
-    return a.x + a.length - 1 >= b.x && a.x < b.x + b.length &&
-           a.y + a.width - 1 >= b.y  && a.y < b.y + b.width  &&
-           a.z + a.height - 1 >= b.z && a.z < b.z + b.height;
-}
-
-function drop(pile: Brick[], brick: Brick): Brick [] {
-    let dropped: Brick = { ...brick };
-    while(dropped.z > 1) {
-        let beneath = pile.filter(b => overlaps(b, { ...dropped, z: dropped.z - 1 }));
-        if(beneath.length > 0) {
-            beneath.forEach(b => {
-                b.above.push(dropped);
-                dropped.below.push(b);
-            });
-            break;
-        } else {
-            dropped.z--;
+// get the bricks that would directly support this brick
+// if added to the top of the pile
+function beneath(pile: number[][], brick: Brick): number[] {
+    let bricks: number[] = [];
+    // gather the highest tiles in the pile
+    for(let x = brick.x; x < brick.x + brick.length; x++) {
+        for(let y = brick.y; y < brick.y + brick.width; y++) {
+            if(pile[x][y]) { // Ignore the ground
+                if(!bricks.includes(pile[x][y])) {
+                    bricks.push(pile[x][y]);
+                }
+            }
         }
     }
-    return pile.concat([dropped]);
+    return bricks;
 }
 
 function settle(bricks: Brick[]): Brick[] {
-    return bricks.sort((a, b) => { return a.z - b.z; }).reduce((acc, brick) => {
-        return drop(acc, brick);
-    }, [] as Brick[]);
+    let length = bricks.reduce((acc, brick) => { return Math.max(acc, brick.x + brick.length) }, 0);
+    let width = bricks.reduce((acc, brick) => { return Math.max(acc, brick.y + brick.width) }, 0);
+    let brickMap: Map<number, Brick> = new Map();
+    const pile: number[][] = Array(length).fill(0).map(() => Array(width).fill(0));
+    let dropped: Brick[] = bricks.sort((a, b) => { return a.z - b.z; }).map(brick => {
+        let supporters: Brick[] = beneath(pile, brick).map(label => { return brickMap.get(label) as Brick });
+        let max = supporters.reduce((acc, b) => { return Math.max(acc, b.z + b.height - 1) }, 0);
+        supporters = supporters.filter(b => { return b.z + b.height - 1 === max });
+        brick.z = max + 1;
+        for(let x = brick.x; x < brick.x + brick.length; x++) {
+            for(let y = brick.y; y < brick.y + brick.width; y++) {
+                if(pile[x][y] > 0) { // ignore ground
+                    let b = brickMap.get(pile[x][y])!;
+                    if(supporters.includes(b)) {
+                        b.above = b.above.includes(brick) ? b.above : b.above.concat(brick);
+                        brick.below = brick.below.includes(b) ? brick.below : brick.below.concat(b);
+                        brickMap.set(b.label, b);
+                    }
+                }
+                pile[x][y] = brick.label;
+            }
+        }
+        brickMap.set(brick.label, brick);
+        return brick;
+    });
+    return dropped;
 }
 
 function partOne(input: string[]): number {
     const settled = settle(parseInput(input));
-    console.table(settled);
     return settled.reduce((acc, brick) => {
         let removable = brick.above.reduce((acc, b) => {
             return acc && (brick.above.length === 0 || brick.above.reduce((acc, b) => {
