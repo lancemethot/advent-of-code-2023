@@ -1,5 +1,4 @@
-import { isNil } from "lodash";
-import { getSmallInput } from "../utils";
+import { getFullInput, getSmallInput } from "../utils";
 
 type Brick = {
     label: number;
@@ -9,6 +8,8 @@ type Brick = {
     length: number;
     width: number;
     height: number;
+    above: Brick[];
+    below: Brick[];
 };
 
 function parseInput(lines: string[]): Brick[] {
@@ -28,44 +29,62 @@ function parseInput(lines: string[]): Brick[] {
             length: Math.abs(x1 - x2) + 1,
             width: Math.abs(y1 - y2) + 1,
             height: Math.abs(z1 - z2) + 1,
+            above: [],
+            below: [],
         } as Brick;
     });
 }
 
-function printCube(cube: Brick[][][]) {
-    cube.forEach((slice, z) => {
-        console.log(`z=${z}`);
-        console.log(slice.map(row => row.map(brick => isNil(brick) ? '.' : brick.label).join('')).join('\n'));
-    });
+function overlaps(a: Brick, b: Brick): boolean {
+    /*
+    console.log(`checking ${a.label} ${a.x},${a.y},${a.z} ${a.length}x${a.width}x${a.height} against ${b.label} ${b.x},${b.y},${b.z} ${b.length}x${b.width}x${b.height}` +
+       `check x: ${a.x + a.length - 1} >= ${b.x} && ${a.x} < ${b.x + b.length}` + 
+       `check y: ${a.y + a.width - 1} >= ${b.y} && ${a.y} < ${b.y + b.width}` + 
+       `check z: ${a.z + a.height - 1} >= ${b.z} && ${a.z} < ${b.z + b.height}`);
+    */
+    return a.x + a.length - 1 >= b.x && a.x < b.x + b.length &&
+           a.y + a.width - 1 >= b.y  && a.y < b.y + b.width  &&
+           a.z + a.height - 1 >= b.z && a.z < b.z + b.height;
+}
+
+function drop(pile: Brick[], brick: Brick): Brick [] {
+    let dropped: Brick = { ...brick };
+    while(dropped.z > 1) {
+        let beneath = pile.filter(b => overlaps(b, { ...dropped, z: dropped.z - 1 }));
+        if(beneath.length > 0) {
+            beneath.forEach(b => {
+                b.above.push(dropped);
+                dropped.below.push(b);
+            });
+            break;
+        } else {
+            dropped.z--;
+        }
+    }
+    return pile.concat([dropped]);
+}
+
+function settle(bricks: Brick[]): Brick[] {
+    return bricks.sort((a, b) => { return a.z - b.z; }).reduce((acc, brick) => {
+        return drop(acc, brick);
+    }, [] as Brick[]);
 }
 
 function partOne(input: string[]): number {
-    const bricks = parseInput(input).sort((a, b) => { return a.z - b.z; });
-    console.table(bricks);
-
-    let length = bricks.reduce((acc, brick) => { return Math.max(acc, brick.x + brick.length); }, 0);
-    let width = bricks.reduce((acc, brick) => { return Math.max(acc, brick.y + brick.width); }, 0)
-    let height = bricks.reduce((acc, brick) => { return Math.max(acc, brick.z + brick.height); }, 0)
-
-    console.log(`cube dimensions: ${length}x${width}x${height}`);
-
-    const cube: Brick[][][] = Array(height).fill(null).map(z => Array(length).fill(null).map(x => Array(width).fill(null)));
-    bricks.forEach(brick => {
-        for (let z = brick.z; z < brick.z + brick.height; z++) {
-            for (let x = brick.x; x < brick.x + brick.length; x++) {
-                for (let y = brick.y; y < brick.y + brick.width; y++) {
-                    cube[z][x][y] = brick;
-                }
-            }
-        }
-    });
-
-    printCube(cube);
-
-    return 0;
+    const settled = settle(parseInput(input));
+    console.table(settled);
+    return settled.reduce((acc, brick) => {
+        let removable = brick.above.reduce((acc, b) => {
+            return acc && (brick.above.length === 0 || brick.above.reduce((acc, b) => {
+                return acc && b.below.length > 1;
+            }, true));
+        }, true);
+        return acc + (removable ? 1 : 0);
+    }, 0);
 }
 
 const day = 'day22';
 test(day, () => {
     expect(partOne(getSmallInput(day))).toBe(5);
+    expect(partOne(getFullInput(day))).toBe(424);
 });
