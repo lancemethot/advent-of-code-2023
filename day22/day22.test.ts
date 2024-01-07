@@ -81,6 +81,24 @@ function settle(bricks: Brick[]): Brick[] {
     return dropped;
 }
 
+function countDependents(brick: Brick): number {
+    let fallen: Brick[] = [brick];
+    let index = 0;
+    while(fallen[index]) {
+        let check = fallen[index];
+        check.above.forEach(b => {
+            let fall = b.below.reduce((acc, b) => {
+                return acc && fallen.includes(b);
+            }, true);
+            if(fall && !fallen.includes(b)) {
+                fallen.push(b);
+            }
+        });
+        index++;
+    }
+    return fallen.length - 1;
+}
+
 function partOne(input: string[]): number {
     const settled = settle(parseInput(input));
     return settled.reduce((acc, brick) => {
@@ -93,8 +111,18 @@ function partOne(input: string[]): number {
     }, 0);
 }
 
+function partTwo(input: string[]): number {
+    const settled = settle(parseInput(input));
+    return settled.reduce((acc, brick) => {
+        return acc + countDependents(brick);
+    }, 0);
+}
+
 const day = 'day22';
 test(day, () => {
     expect(partOne(getSmallInput(day))).toBe(5);
     expect(partOne(getFullInput(day))).toBe(424);
+
+    expect(partTwo(getSmallInput(day))).toBe(7);
+    expect(partTwo(getFullInput(day))).toBe(55483);
 });
