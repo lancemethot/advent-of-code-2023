@@ -9,6 +9,14 @@ enum TileType {
     SLOPE_W = '<',
 }
 
+enum Direction {
+    NORTH = '^',
+    SOUTH = 'v',
+    EAST = '>',
+    WEST = '<',
+}
+const directions: Direction[] = [Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST];
+
 type Tile = {
     type: TileType,
     x: number,
@@ -37,10 +45,9 @@ function parseInput(lines: string[]): Tile[][] {
     });
 }
 
-// TODO: return all four directions regardless of undefined
 // TODO: prefer perimeter options during traversal
 
-function moves(tiles: Tile[][], tile: Tile, slippery: boolean = true): Tile[] {
+function moves(tiles: Tile[][], tile: Tile, slippery: boolean = true): (Tile | undefined)[] {
     let north: Tile | undefined = tiles[tile.x-1] ? tiles[tile.x-1][tile.y] : undefined;
     let south: Tile | undefined = tiles[tile.x+1] ? tiles[tile.x+1][tile.y] : undefined;
     let east: Tile | undefined = tiles[tile.x][tile.y+1];
@@ -48,16 +55,16 @@ function moves(tiles: Tile[][], tile: Tile, slippery: boolean = true): Tile[] {
     if(slippery) {
         switch(tile.type) {
             case TileType.SLOPE_N:
-                return [north as Tile];
+                return [ north as Tile, undefined, undefined, undefined ];
             case TileType.SLOPE_S:
-                return [south as Tile];
+                return [ undefined, south as Tile, undefined, undefined ];
             case TileType.SLOPE_E:
-                return [east as Tile];
+                return [ undefined, undefined, east as Tile, undefined ];
             case TileType.SLOPE_W:
-                return [west as Tile];
+                return [ undefined, undefined, undefined, west as Tile ];
         }
     }
-    return [north, south, east, west].filter(t => t !== undefined).filter(t => t?.type !== TileType.FOREST) as Tile[];
+    return [north, south, east, west].filter(t => t?.type === TileType.FOREST ? undefined : t) as Tile[];
 }
 
 // Contract path into segments of straight lines that each have a length
@@ -78,23 +85,23 @@ function contract(tiles: Tile[][], slippery: boolean = false): Segment[] {
                 segment.exit = true;
                 break;
             }
-            let next = moves(tiles, current, slippery).filter(tile => !visited.some(v => v.x === tile.x && v.y === tile.y));
+            let next = moves(tiles, current, slippery).filter(tile => tile && !visited.some(v => v.x === tile!.x && v.y === tile!.y));
             // Keep moving forward
             if(next.length === 1) {
                 segment.end = current;
-                visited.push(next[0]);
+                visited.push(next[0]!);
             } else {
                 // This is an intersection. Branch off into new segments.
                 next.forEach(tile => {
                     // Check if we've already discovered this segment
-                    let discovered = segments.findIndex(s => s.start.x === tile.x && s.start.y === tile.y);
+                    let discovered = segments.findIndex(s => s.start.x === tile!.x && s.start.y === tile!.y);
                     if(discovered >= 0) {
                         segment.branches.push(segments[discovered].start);
                     } else {
                         let branch: Segment = {
                             from: current,
-                            start: tile,
-                            end: tile,
+                            start: tile!,
+                            end: tile!,
                             length: 0,
                             branches: [],
                             exit: false,
@@ -141,24 +148,6 @@ function traverse(segments: Segment[], start: Tile): Segment[][] {
 
     return paths;
 
-}
-
-function printMap(tiles: Tile[][], segments: Segment[]) {
-    let map = tiles.map(line => line.map(tile => tile.type as string));
-    for(let s = 0; s < segments.length; s++) {
-        map[segments[s].from.x][segments[s].from.y] = 'O';
-        let x = segments[s].start.x;
-        let y = segments[s].start.y;
-        for(let i = 0; i < segments[s].length; i++) {
-            map[x][y] = 'O';
-            let next = moves(tiles, { x, y, type: TileType.PATH }, false).filter(tile => map[tile.x][tile.y] !== 'O');
-            if(next.length > 0) {
-                x = next[0].x;
-                y = next[0].y;
-            }
-        }
-    }
-    console.log(map.map(line => line.join('')).join('\n'));
 }
 
 function partOne(input: string[]): number {
