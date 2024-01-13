@@ -24,6 +24,7 @@ type Tile = {
 }
 
 type Segment = {
+    direction: Direction,
     from: Tile,
     start: Tile,
     end: Tile,
@@ -44,8 +45,6 @@ function parseInput(lines: string[]): Tile[][] {
         });
     });
 }
-
-// TODO: prefer perimeter options during traversal
 
 function moves(tiles: Tile[][], tile: Tile, slippery: boolean = true): (Tile | undefined)[] {
     let north: Tile | undefined = tiles[tile.x-1] ? tiles[tile.x-1][tile.y] : undefined;
@@ -68,12 +67,22 @@ function moves(tiles: Tile[][], tile: Tile, slippery: boolean = true): (Tile | u
 }
 
 // Contract path into segments of straight lines that each have a length
-// and each branch into other segments.
+// and each branch into other segments. Segments that reach the end are
+// are marked as 'exit' segments. Junction tiles between segments are
+// marked on each segment as 'from' with a 'direction'.
 function contract(tiles: Tile[][], slippery: boolean = false): Segment[] {
     let start = tiles[0].filter(tile => tile.type === TileType.PATH)[0];
     let end = tiles[tiles.length-1].filter(tile => tile.type === TileType.PATH)[0];
     let segments: Segment[] = [];
-    segments.push({ from: start, start, end: start, length: -1, branches: [], exit: false });
+    segments.push({
+        direction: Direction.SOUTH,
+        from: start, 
+        start: start,
+        end: start,
+        length: -1, // start tile doesn't count
+        branches: [],
+        exit: false
+    });
     for(let sIndex = 0; sIndex < segments.length; sIndex++) {
         let segment = segments[sIndex];
         let visited: Tile[] = [segment.from, segment.start];
@@ -85,20 +94,24 @@ function contract(tiles: Tile[][], slippery: boolean = false): Segment[] {
                 segment.exit = true;
                 break;
             }
-            let next = moves(tiles, current, slippery).filter(tile => tile && !visited.some(v => v.x === tile!.x && v.y === tile!.y));
+            let next = moves(tiles, current, slippery).map(tile => tile && visited.some(v => v.x === tile!.x && v.y === tile!.y) ? undefined : tile);
+            let available = next.filter(tile => tile !== undefined);
+
             // Keep moving forward
-            if(next.length === 1) {
+            if(available.length === 1) {
                 segment.end = current;
-                visited.push(next[0]!);
+                visited.push(available[0]!);
             } else {
                 // This is an intersection. Branch off into new segments.
-                next.forEach(tile => {
+                next.forEach((tile, index) => {
+                    if(tile === undefined) return;
                     // Check if we've already discovered this segment
                     let discovered = segments.findIndex(s => s.start.x === tile!.x && s.start.y === tile!.y);
                     if(discovered >= 0) {
                         segment.branches.push(segments[discovered].start);
                     } else {
                         let branch: Segment = {
+                            direction: directions[index],
                             from: current,
                             start: tile!,
                             end: tile!,
