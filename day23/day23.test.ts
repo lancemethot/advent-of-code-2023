@@ -140,20 +140,33 @@ function traverse(segments: Segment[], start: Tile): Segment[][] {
         let path = paths[pIndex];
         for(let sIndex = path.length - 1; sIndex < path.length; sIndex++) {
             let current = path[sIndex];
-            let branches = current.branches.filter(b => !path.some(p => (p.start.x === b.x && p.start.y === b.y) || (p.end.x === b.x && p.end.y === b.y)));
+            if(current.exit) continue; // done with path
 
+            let branches = current.branches.filter(b => !path.some(p => (p.start.x === b.x && p.start.y === b.y) || (p.end.x === b.x && p.end.y === b.y)));
             if(branches.length === 0) {
-                // done with path
+                // dead-end, remove from paths
+                paths.splice(pIndex, 1);
+                pIndex--;
                 continue;
             }
 
+            // map branches into segments and sort
+            let next: Segment[] = branches.map((branch, index) => {
+                return segments.filter(s => s.start.x === branch.x && s.start.y === branch.y)[0];
+            }).sort((a, b) => {
+                // preference towards south and east directions (perimeter assuming start is north west)
+                return a.direction === Direction.SOUTH || a.direction === Direction.EAST ? -1 : 1;
+            }).sort((a, b) => {
+                // preference towards same direction (straight lines)
+                return current.direction === a.direction ? -1 : current.direction === b.direction ? 1 : 0;
+            });
+
             // queue next segment or queue a new path
-            branches.forEach((branch, index) => {
-                let segment = segments.filter(s => s.start.x === branch.x && s.start.y === branch.y)[0];
+            next.forEach((segment, index) => {
                 if(index === 0) {
                     path.push(segment);
                 } else {
-                     paths.push(path.slice(0, -1).concat(segment));
+                    paths.push(path.slice(0, -1).concat(segment));
                 }
             });
         }
