@@ -151,28 +151,34 @@ function contract(tiles: Tile[][], slippery: boolean = false): Junction[] {
 
 function traverse(junctions: Junction[], start: Tile): Path[] {
     let paths: Path[] = [];
-    paths.push({
+    let stack: Path[] = [];
+
+    let path: Path | undefined = {
         steps: [{
             junction: junctions.filter(j => j.tile.x === start.x && j.tile.y === start.y)[0],
             direction: Direction.SOUTH,
             length: 0,
         }],
-    });
+    };
 
-    for(let pIndex = 0; pIndex < paths.length; pIndex++) {
-        let path = paths[pIndex];
-        for(let jIndex = path.steps.length - 1; jIndex < path.steps.length; jIndex++) {
-            let junction = path.steps[jIndex].junction;
-            if(junction.exit) continue; // done with path
+    stack.push(path);
+
+    while((path = stack.shift()) !== undefined) {
+        for(let index = path.steps.length - 1; index < path.steps.length; index++) {
+            let junction = path.steps[index].junction;
+            if(junction.exit) {
+                paths.push(path);
+                continue; // done with path
+            }
 
             // determine direction by checking the previous junction
             // check with branch was chosen to reach current junction
-            let direction = jIndex === 0 ? Direction.SOUTH : directions[path.steps[jIndex-1]?.junction.branches.findIndex(branch => branch && branch?.junction?.tile.x === junction.tile.x && branch.junction.tile.y === junction.tile.y) || 0];
+            let direction = index === 0 ? Direction.SOUTH : directions[path.steps[index-1]?.junction.branches.findIndex(branch => branch && branch?.junction?.tile.x === junction.tile.x && branch.junction.tile.y === junction.tile.y) || 0];
 
             // Map branches to segments in this order: [north, south, east, west]
             let branches = junction.branches.filter(b => b !== undefined && b.junction !== undefined).map(branch => {
                 // Skip branches if junction has already been visited
-                let visited = path.steps.some(s => s.junction.tile.x === branch!.junction!.tile.x && s.junction.tile.y === branch!.junction!.tile.y);
+                let visited = path!.steps.some(s => s.junction.tile.x === branch!.junction!.tile.x && s.junction.tile.y === branch!.junction!.tile.y);
                 return visited ? undefined : branch;
             }).filter(b => b !== undefined).sort((a, b) => {
                 return a?.direction === Direction.SOUTH || a?.direction == Direction.EAST ? -1 : 1;
@@ -182,8 +188,6 @@ function traverse(junctions: Junction[], start: Tile): Path[] {
 
             if(branches.length === 0) {
                 // no moves, remove from paths
-                paths.splice(pIndex, 1);
-                pIndex--;
                 continue;
             }
 
@@ -196,10 +200,10 @@ function traverse(junctions: Junction[], start: Tile): Path[] {
                 };
 
                 if(index === 0) {
-                    path.steps.push(step);
+                    path!.steps.push(step);
                 } else {
-                    paths.push({
-                        steps: path.steps.slice(0, -1).concat(step),
+                    stack.unshift({
+                        steps: path!.steps.slice(0, -1).concat(step),
                     });
                 }
             });
@@ -239,5 +243,5 @@ test(day, () => {
     expect(partOne(getFullInput(day))).toBe(2502);
 
     expect(partTwo(getSmallInput(day))).toBe(154);
-    //expect(partTwo(getFullInput(day))).toBe(0);
+    expect(partTwo(getFullInput(day))).toBe(6726);
 })
