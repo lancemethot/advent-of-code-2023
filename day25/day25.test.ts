@@ -1,4 +1,8 @@
 import { getFullInput, getSmallInput } from '../utils';
+import { PriorityQueue } from './priority-queue.test';
+
+// https://blog.thomasjungblut.com/graph/mincut/mincut/
+// https://github.com/jgrapht/jgrapht/blob/master/jgrapht-core/src/main/java/org/jgrapht/alg/StoerWagnerMinimumCut.java
 
 const day = "day25";
 
@@ -81,6 +85,49 @@ function minimumCutPhase(graph: Graph, a: string): Cut {
     return { s, t, weight };
 }
 
+function minimumCutPhaseWithQueue(graph: Graph, a: string): Cut {
+    let workingGraph: Graph = new Map(graph);
+    let s: string = '';
+    let t: string = a;
+    let weight: number = 0;
+
+    let prioritizer = (a: Edge, b: Edge) => b.weight - a.weight;
+    let comparator = (a: Edge, b: Edge) => a.name === b.name && a.weight === b.weight;
+    let queue: PriorityQueue<Edge> = new PriorityQueue<Edge>(prioritizer, comparator);
+    let dmap: Map<string, Edge> = new Map<string, Edge>();
+
+    // Initialize queue
+    Array.from(workingGraph.keys()).filter(key => key !== a).forEach(v => {
+        let aEdges: Edge[] = workingGraph.get(v)!.filter(edge => edge.name === a);
+        let edge: Edge = { name: v, weight: Number.MIN_VALUE };
+        if(aEdges.length > 0) edge.weight = aEdges[0].weight;
+        queue.enqueue(edge);
+        dmap.set(v, edge);
+    });
+
+    // Iteratively update the queue to get the required vertex ordering
+    while(queue.size > 0) {
+        let v: Edge = queue.dequeue() as Edge;
+        dmap.delete(v.name);
+
+        s = t;
+        t = v.name;
+        weight = v.weight;
+
+        workingGraph.get(v.name)!.forEach(e => {
+            let neighbor: string = e.name;
+            let neighborEdge: Edge | undefined = dmap.get(neighbor); 
+            if(neighborEdge !== undefined) {
+                queue.remove(neighborEdge);
+                neighborEdge.weight += e.weight;
+                queue.enqueue(neighborEdge);
+            }
+        });
+    }
+
+    return { s, t, weight };
+}
+
 /*
 MinimumCut(G):
   minimum cut = nil
@@ -99,7 +146,7 @@ function minimumCut(graph: Graph): Cut {
     let currentBestCut: Cut = { s: '', t: '', weight: Number.MAX_VALUE};
 
     while(graph.size > 1) {
-        let cutOfThePhase: Cut = minimumCutPhase(graph, Array.from(graph.keys())[0]);
+        let cutOfThePhase: Cut = minimumCutPhaseWithQueue(graph, Array.from(graph.keys())[0]);
         if(cutOfThePhase.weight < currentBestCut.weight) {
             currentBestCut = cutOfThePhase;
             currentBestPartition = new Set(currentPartition);
@@ -168,7 +215,6 @@ function partOne(input: string[]): number {
 }
 
 test(day, () => {
-    // https://blog.thomasjungblut.com/graph/mincut/mincut/
     expect(partOne(getSmallInput(day))).toBe(54);
-    expect(partOne(getFullInput(day))).toBe(0);
+    expect(partOne(getFullInput(day))).toBe(555702);
 });
