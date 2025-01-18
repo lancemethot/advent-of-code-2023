@@ -1,5 +1,5 @@
 import { isNil, isEmpty } from "lodash";
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 const cache: Map<string, { left: string; right: string }> = new Map();
 
@@ -100,10 +100,10 @@ function partTwo(lines: string[]): number {
 
 const day = "day08";
 test(day, () => {
-  expect(partOne(getSmallInput(day, 1))).toBe(2);
-  expect(partOne(getSmallInput(day, 2))).toBe(6);
-  expect(partOne(getFullInput(day))).toBe(21797);
+  expect(partOne(getExampleInput(day, 1))).toBe(2);
+  expect(partOne(getExampleInput(day, 2))).toBe(6);
+  expect(partOne(getDayInput(day))).toBe(21797);
 
-  expect(partTwo(getSmallInput(day, 3))).toBe(6);
-  expect(partTwo(getFullInput(day))).toBe(23977527174353);
+  expect(partTwo(getExampleInput(day, 3))).toBe(6);
+  expect(partTwo(getDayInput(day))).toBe(23977527174353);
 });

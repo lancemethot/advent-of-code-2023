@@ -1,5 +1,4 @@
-import { getFullInput, getSmallInput } from '../utils';
-import { PriorityQueue } from './priority-queue.test';
+import { getDayInput, getExampleInput, PriorityQueue } from 'advent-of-code-utils';
 
 // https://blog.thomasjungblut.com/graph/mincut/mincut/
 // https://github.com/jgrapht/jgrapht/blob/master/jgrapht-core/src/main/java/org/jgrapht/alg/StoerWagnerMinimumCut.java
@@ -215,6 +214,6 @@ function partOne(input: string[]): number {
 }
 
 test(day, () => {
-    expect(partOne(getSmallInput(day))).toBe(54);
-    expect(partOne(getFullInput(day))).toBe(555702);
+    expect(partOne(getExampleInput(day))).toBe(54);
+    expect(partOne(getDayInput(day))).toBe(555702);
 });

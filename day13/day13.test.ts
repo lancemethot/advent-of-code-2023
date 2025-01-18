@@ -1,5 +1,5 @@
 import { isEmpty, isNil } from "lodash";
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum Terrain {
   ASH = ".",
@@ -151,9 +151,9 @@ function partTwo(lines: string[]) {
 
 const day = "day13";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(405);
-  expect(partOne(getFullInput(day))).toBe(37975);
+  expect(partOne(getExampleInput(day))).toBe(405);
+  expect(partOne(getDayInput(day))).toBe(37975);
 
-  expect(partTwo(getSmallInput(day))).toBe(400);
-  expect(partTwo(getFullInput(day))).toBe(32497);
+  expect(partTwo(getExampleInput(day))).toBe(400);
+  expect(partTwo(getDayInput(day))).toBe(32497);
 });

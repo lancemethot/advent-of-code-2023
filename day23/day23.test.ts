@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum TileType {
     PATH = '.',
@@ -239,9 +239,9 @@ function partTwo(input: string[]): number {
 
 const day = 'day23';
 test(day, () => {
-    expect(partOne(getSmallInput(day))).toBe(94);
-    expect(partOne(getFullInput(day))).toBe(2502);
+    expect(partOne(getExampleInput(day))).toBe(94);
+    expect(partOne(getDayInput(day))).toBe(2502);
 
-    expect(partTwo(getSmallInput(day))).toBe(154);
-    expect(partTwo(getFullInput(day))).toBe(6726);
+    expect(partTwo(getExampleInput(day))).toBe(154);
+    expect(partTwo(getDayInput(day))).toBe(6726);
 })

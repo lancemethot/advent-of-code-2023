@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 type Race = {
   time: number;
@@ -70,9 +70,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day06";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(288);
-  expect(partOne(getFullInput(day))).toBe(633080);
+  expect(partOne(getExampleInput(day))).toBe(288);
+  expect(partOne(getDayInput(day))).toBe(633080);
 
-  expect(partTwo(getSmallInput(day))).toBe(71503);
-  expect(partTwo(getFullInput(day))).toBe(20048741);
+  expect(partTwo(getExampleInput(day))).toBe(71503);
+  expect(partTwo(getDayInput(day))).toBe(20048741);
 });

@@ -1,4 +1,4 @@
-import { getSmallInput, getFullInput } from "../utils";
+import { getExampleInput, getDayInput } from "advent-of-code-utils";
 
 type Card = {
   cardNumber: number;
@@ -56,9 +56,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day04";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(13);
-  expect(partOne(getFullInput(day))).toBe(23673);
+  expect(partOne(getExampleInput(day))).toBe(13);
+  expect(partOne(getDayInput(day))).toBe(23673);
 
-  expect(partTwo(getSmallInput(day))).toBe(30);
-  expect(partTwo(getFullInput(day))).toBe(12263631);
+  expect(partTwo(getExampleInput(day))).toBe(30);
+  expect(partTwo(getDayInput(day))).toBe(12263631);
 });

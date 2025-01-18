@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 type Brick = {
     label: number;
@@ -120,9 +120,9 @@ function partTwo(input: string[]): number {
 
 const day = 'day22';
 test(day, () => {
-    expect(partOne(getSmallInput(day))).toBe(5);
-    expect(partOne(getFullInput(day))).toBe(424);
+    expect(partOne(getExampleInput(day))).toBe(5);
+    expect(partOne(getDayInput(day))).toBe(424);
 
-    expect(partTwo(getSmallInput(day))).toBe(7);
-    expect(partTwo(getFullInput(day))).toBe(55483);
+    expect(partTwo(getExampleInput(day))).toBe(7);
+    expect(partTwo(getDayInput(day))).toBe(55483);
 });

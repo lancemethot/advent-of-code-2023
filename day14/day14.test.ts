@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum TileType {
   ROUND = "O",
@@ -104,9 +104,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day14";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(136);
-  expect(partOne(getFullInput(day))).toBe(112048);
+  expect(partOne(getExampleInput(day))).toBe(136);
+  expect(partOne(getDayInput(day))).toBe(112048);
 
-  expect(partTwo(getSmallInput(day))).toBe(64);
-  expect(partTwo(getFullInput(day))).toBe(105606);
+  expect(partTwo(getExampleInput(day))).toBe(64);
+  expect(partTwo(getDayInput(day))).toBe(105606);
 });

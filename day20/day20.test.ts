@@ -1,5 +1,5 @@
 import { isNil } from "lodash";
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum ModuleType {
     FLIP_FLOP = '%',
@@ -161,9 +161,9 @@ function partTwo(lines: string[]): number {
 
 const day = 'day20';
 test(day, () => {
-    expect(partOne(getSmallInput(day, 1))).toBe(32000000);
-    expect(partOne(getSmallInput(day, 2))).toBe(11687500);
-    expect(partOne(getFullInput(day))).toBe(680278040);
+    expect(partOne(getExampleInput(day, 1))).toBe(32000000);
+    expect(partOne(getExampleInput(day, 2))).toBe(11687500);
+    expect(partOne(getDayInput(day))).toBe(680278040);
 
-    expect(partTwo(getFullInput(day))).toBe(243548140870057);
+    expect(partTwo(getDayInput(day))).toBe(243548140870057);
 });

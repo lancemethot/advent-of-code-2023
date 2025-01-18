@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum Direction {
   LEFT = "L",
@@ -89,9 +89,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day18";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(62);
-  expect(partOne(getFullInput(day))).toBe(50603);
+  expect(partOne(getExampleInput(day))).toBe(62);
+  expect(partOne(getDayInput(day))).toBe(50603);
 
-  expect(partTwo(getSmallInput(day))).toBe(952408144115);
-  expect(partTwo(getFullInput(day))).toBe(96556251590677);
+  expect(partTwo(getExampleInput(day))).toBe(952408144115);
+  expect(partTwo(getDayInput(day))).toBe(96556251590677);
 });

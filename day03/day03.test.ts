@@ -1,6 +1,6 @@
 import { isEmpty, isNil } from "lodash";
 
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 /**
 const lines = getInputLines("day03")
@@ -262,9 +262,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day03";
 test("day 3", () => {
-  expect(partOne(getSmallInput(day))).toBe(4361);
-  expect(partOne(getFullInput(day))).toBe(512794);
+  expect(partOne(getExampleInput(day))).toBe(4361);
+  expect(partOne(getDayInput(day))).toBe(512794);
 
-  expect(partTwo(getSmallInput(day))).toBe(467835);
-  expect(partTwo(getFullInput(day))).toBe(67779080);
+  expect(partTwo(getExampleInput(day))).toBe(467835);
+  expect(partTwo(getDayInput(day))).toBe(67779080);
 });

@@ -1,5 +1,5 @@
 import path from "path";
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 import fs from 'fs'
 
 enum TileType {
@@ -166,15 +166,15 @@ function partTwo(lines: string[], steps: number): number {
 
 const day = "day21";
 test(day, () => {
-  expect(partOne(getSmallInput(day), 6)).toBe(16);
-  expect(partOne(getFullInput(day), 64)).toBe(3660);
+  expect(partOne(getExampleInput(day), 6)).toBe(16);
+  expect(partOne(getDayInput(day), 64)).toBe(3660);
 
-  //expect(partTwo(getSmallInput(day), 6)).toBe(16);
-  //expect(partTwo(getSmallInput(day), 10)).toBe(50);
-  //expect(partTwo(getSmallInput(day), 50)).toBe(1594);
-  //expect(partTwo(getSmallInput(day), 100)).toBe(6536);
-  //expect(partTwo(getSmallInput(day), 500)).toBe(167004);
-  //expect(partTwo(getSmallInput(day), 1000)).toBe(668697);
-  //expect(partTwo(getSmallInput(day), 5000)).toBe(16733044);
-  expect(partTwo(getFullInput(day), 26501365)).toBe(605492675373144);
+  //expect(partTwo(getExampleInput(day), 6)).toBe(16);
+  //expect(partTwo(getExampleInput(day), 10)).toBe(50);
+  //expect(partTwo(getExampleInput(day), 50)).toBe(1594);
+  //expect(partTwo(getExampleInput(day), 100)).toBe(6536);
+  //expect(partTwo(getExampleInput(day), 500)).toBe(167004);
+  //expect(partTwo(getExampleInput(day), 1000)).toBe(668697);
+  //expect(partTwo(getExampleInput(day), 5000)).toBe(16733044);
+  expect(partTwo(getDayInput(day), 26501365)).toBe(605492675373144);
 });

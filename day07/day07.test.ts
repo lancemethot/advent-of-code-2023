@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum HandType {
   FIVE_OF_A_KIND = 7,
@@ -158,9 +158,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day07";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(6440);
-  expect(partOne(getFullInput(day))).toBe(249204891);
+  expect(partOne(getExampleInput(day))).toBe(6440);
+  expect(partOne(getDayInput(day))).toBe(249204891);
 
-  expect(partTwo(getSmallInput(day))).toBe(5905);
-  expect(partTwo(getFullInput(day))).toBe(249666369);
+  expect(partTwo(getExampleInput(day))).toBe(5905);
+  expect(partTwo(getDayInput(day))).toBe(249666369);
 });

@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 type History = {
   steps: number[];
@@ -71,9 +71,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day09";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(114);
-  expect(partOne(getFullInput(day))).toBe(1641934234);
+  expect(partOne(getExampleInput(day))).toBe(114);
+  expect(partOne(getDayInput(day))).toBe(1641934234);
 
-  expect(partTwo(getSmallInput(day))).toBe(2);
-  expect(partTwo(getFullInput(day))).toBe(975);
+  expect(partTwo(getExampleInput(day))).toBe(2);
+  expect(partTwo(getDayInput(day))).toBe(975);
 });

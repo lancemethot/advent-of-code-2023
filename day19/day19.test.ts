@@ -1,5 +1,5 @@
 import { isNil } from "lodash";
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum Category {
   X = "x",
@@ -223,9 +223,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day19";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(19114);
-  expect(partOne(getFullInput(day))).toBe(480738);
+  expect(partOne(getExampleInput(day))).toBe(19114);
+  expect(partOne(getDayInput(day))).toBe(480738);
 
-  expect(partTwo(getSmallInput(day))).toBe(167409079868000);
-  expect(partTwo(getFullInput(day))).toBe(131550418841958);
+  expect(partTwo(getExampleInput(day))).toBe(167409079868000);
+  expect(partTwo(getDayInput(day))).toBe(131550418841958);
 });

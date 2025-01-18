@@ -1,4 +1,4 @@
-import { getSmallInput, getFullInput, removeEmptyLines } from "../utils";
+import { getExampleInput, getDayInput } from "advent-of-code-utils";
 
 const MAX_RED = 12;
 const MAX_GREEN = 13;
@@ -14,6 +14,10 @@ type Game = {
   id: number;
   sets: GameSet[];
 };
+
+function removeEmptyLines(lines: string[]): string[] {
+  return lines.filter(line => line.trim().length > 0);
+}
 
 function parseSet(setStr: string): GameSet {
   const colors = setStr.trim().split(",");
@@ -99,9 +103,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day02";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(8);
-  expect(partOne(getFullInput(day))).toBe(2683);
+  expect(partOne(getExampleInput(day))).toBe(8);
+  expect(partOne(getDayInput(day))).toBe(2683);
 
-  expect(partTwo(getSmallInput(day))).toBe(2286);
-  expect(partTwo(getFullInput(day))).toBe(49710);
+  expect(partTwo(getExampleInput(day))).toBe(2286);
+  expect(partTwo(getDayInput(day))).toBe(49710);
 });

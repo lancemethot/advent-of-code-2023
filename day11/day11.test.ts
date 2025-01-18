@@ -1,5 +1,5 @@
 import { defaultsDeep, uniq } from "lodash";
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum TileType {
   GALAXY = "#",
@@ -134,11 +134,11 @@ function partTwo(lines: string[], expansionRate: number = 2): number {
 
 const day = "day11";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(374);
-  expect(partOne(getFullInput(day))).toBe(10885634);
+  expect(partOne(getExampleInput(day))).toBe(374);
+  expect(partOne(getDayInput(day))).toBe(10885634);
 
-  expect(partTwo(getSmallInput(day), 2)).toBe(374);
-  expect(partTwo(getSmallInput(day), 10)).toBe(1030);
-  expect(partTwo(getSmallInput(day), 100)).toBe(8410);
-  expect(partTwo(getFullInput(day), 1000000)).toBe(707505470642);
+  expect(partTwo(getExampleInput(day), 2)).toBe(374);
+  expect(partTwo(getExampleInput(day), 10)).toBe(1030);
+  expect(partTwo(getExampleInput(day), 100)).toBe(8410);
+  expect(partTwo(getDayInput(day), 1000000)).toBe(707505470642);
 });

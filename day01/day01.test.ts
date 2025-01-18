@@ -1,5 +1,5 @@
 import { isNil } from "lodash";
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 const map: Map<string, { character: string; ignore: number }> = new Map();
 map.set("one", { character: "1", ignore: 2 });
@@ -68,9 +68,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day01";
 test(day, () => {
-  expect(partOne(getSmallInput(day, 1))).toBe(142);
-  expect(partOne(getFullInput(day))).toBe(55816);
+  expect(partOne(getExampleInput(day, 1))).toBe(142);
+  expect(partOne(getDayInput(day))).toBe(55816);
 
-  expect(partTwo(getSmallInput(day, 2))).toBe(281);
-  expect(partTwo(getFullInput(day))).toBe(54980);
+  expect(partTwo(getExampleInput(day, 2))).toBe(281);
+  expect(partTwo(getDayInput(day))).toBe(54980);
 });

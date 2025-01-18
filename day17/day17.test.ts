@@ -1,5 +1,5 @@
 import { isNil } from "lodash";
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum Direction {
   LEFT = "<",
@@ -327,10 +327,10 @@ function partTwo(lines: string[]): number {
 
 const day = "day17";
 test(day, () => {
-  expect(partOne(getSmallInput(day, 1))).toBe(102);
-  expect(partOne(getFullInput(day))).toBe(1004);
+  expect(partOne(getExampleInput(day, 1))).toBe(102);
+  expect(partOne(getDayInput(day))).toBe(1004);
 
-  expect(partTwo(getSmallInput(day, 1))).toBe(94);
-  expect(partTwo(getSmallInput(day, 2))).toBe(71);
-  expect(partTwo(getFullInput(day))).toBe(1171);
+  expect(partTwo(getExampleInput(day, 1))).toBe(94);
+  expect(partTwo(getExampleInput(day, 2))).toBe(71);
+  expect(partTwo(getDayInput(day))).toBe(1171);
 });

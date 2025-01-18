@@ -1,5 +1,5 @@
 import { isNil } from "lodash";
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum TileType {
   EMPTY = ".",
@@ -201,9 +201,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day16";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(46);
-  expect(partOne(getFullInput(day))).toBe(7870);
+  expect(partOne(getExampleInput(day))).toBe(46);
+  expect(partOne(getDayInput(day))).toBe(7870);
 
-  expect(partTwo(getSmallInput(day))).toBe(51);
-  expect(partTwo(getFullInput(day))).toBe(8143);
+  expect(partTwo(getExampleInput(day))).toBe(51);
+  expect(partTwo(getDayInput(day))).toBe(8143);
 });

@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 enum Condition {
   OPERATIONAL = ".",
@@ -98,9 +98,9 @@ function partTwo(lines: string[]): number {
 
 const day = "day12";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(21);
-  expect(partOne(getFullInput(day))).toBe(7251);
+  expect(partOne(getExampleInput(day))).toBe(21);
+  expect(partOne(getDayInput(day))).toBe(7251);
 
-  expect(partTwo(getSmallInput(day))).toBe(525152);
-  expect(partTwo(getFullInput(day))).toBe(2128386729962);
+  expect(partTwo(getExampleInput(day))).toBe(525152);
+  expect(partTwo(getDayInput(day))).toBe(2128386729962);
 });

@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 type Axis = 'x' | 'y' | 'z';
 
@@ -172,8 +172,8 @@ function partTwo(input: string[]): number {
 
 const day = 'day24';
 test(day, () => {
-    expect(partOne(getSmallInput(day), 7, 27)).toBe(2);
-    expect(partOne(getFullInput(day), 200000000000000, 400000000000000)).toBe(17244);
+    expect(partOne(getExampleInput(day), 7, 27)).toBe(2);
+    expect(partOne(getDayInput(day), 200000000000000, 400000000000000)).toBe(17244);
 
-    expect(partTwo(getFullInput(day))).toBe(1025019997186820);
+    expect(partTwo(getDayInput(day))).toBe(1025019997186820);
 });

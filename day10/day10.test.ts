@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 type Tile = {
   x: number;
@@ -183,16 +183,16 @@ function partTwo(lines: string[]): number {
 
 const day = "day10";
 test(day, () => {
-  expect(partOne(getSmallInput(day, 1))).toBe(4);
-  expect(partOne(getSmallInput(day, 2))).toBe(8);
-  expect(partOne(getFullInput(day))).toBe(6701);
+  expect(partOne(getExampleInput(day, 1))).toBe(4);
+  expect(partOne(getExampleInput(day, 2))).toBe(8);
+  expect(partOne(getDayInput(day))).toBe(6701);
 
-  expect(partTwo(getSmallInput(day, 3))).toBe(4);
-  expect(partTwo(getSmallInput(day, 4))).toBe(4);
-  expect(partTwo(getSmallInput(day, 5))).toBe(4);
-  expect(partTwo(getSmallInput(day, 6))).toBe(8);
-  expect(partTwo(getSmallInput(day, 7))).toBe(8);
-  expect(partTwo(getSmallInput(day, 8))).toBe(10);
-  expect(partTwo(getSmallInput(day, 9))).toBe(10);
-  expect(partTwo(getFullInput(day))).toBe(303);
+  expect(partTwo(getExampleInput(day, 3))).toBe(4);
+  expect(partTwo(getExampleInput(day, 4))).toBe(4);
+  expect(partTwo(getExampleInput(day, 5))).toBe(4);
+  expect(partTwo(getExampleInput(day, 6))).toBe(8);
+  expect(partTwo(getExampleInput(day, 7))).toBe(8);
+  expect(partTwo(getExampleInput(day, 8))).toBe(10);
+  expect(partTwo(getExampleInput(day, 9))).toBe(10);
+  expect(partTwo(getDayInput(day))).toBe(303);
 });

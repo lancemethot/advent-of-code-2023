@@ -1,4 +1,4 @@
-import { getFullInput, getSmallInput } from "../utils";
+import { getDayInput, getExampleInput } from "advent-of-code-utils";
 
 function parseInput(lines: string[]): string[] {
   return lines[0]
@@ -61,9 +61,9 @@ function partTwo(lines: string[]) {
 
 const day = "day15";
 test(day, () => {
-  expect(partOne(getSmallInput(day))).toBe(1320);
-  expect(partOne(getFullInput(day))).toBe(518107);
+  expect(partOne(getExampleInput(day))).toBe(1320);
+  expect(partOne(getDayInput(day))).toBe(518107);
 
-  expect(partTwo(getSmallInput(day))).toBe(145);
-  expect(partTwo(getFullInput(day))).toBe(303404);
+  expect(partTwo(getExampleInput(day))).toBe(145);
+  expect(partTwo(getDayInput(day))).toBe(303404);
 });
